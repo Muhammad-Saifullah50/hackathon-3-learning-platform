@@ -9,7 +9,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.agent_exercise import Exercise as AgentExercise
+from src.models.agent_exercise import AgentExercise
 
 
 class ExerciseRepository:

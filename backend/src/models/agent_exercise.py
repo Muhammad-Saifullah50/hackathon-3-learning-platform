@@ -14,7 +14,7 @@ from src.database import Base
 from src.models.base import TimestampMixin
 
 
-class Exercise(Base, TimestampMixin):
+class AgentExercise(Base, TimestampMixin):
     """Represents a coding challenge generated for practice."""
 
     __tablename__ = "exercises_agent"
@@ -35,7 +35,9 @@ class Exercise(Base, TimestampMixin):
 
     # Relationships
     submissions = relationship(
-        "ExerciseSubmission", back_populates="exercise", cascade="all, delete-orphan"
+        "AgentExerciseSubmission",
+        back_populates="exercise",
+        cascade="all, delete-orphan",
     )
 
     __table_args__ = (
@@ -53,7 +55,7 @@ class Exercise(Base, TimestampMixin):
     )
 
 
-class ExerciseSubmission(Base, TimestampMixin):
+class AgentExerciseSubmission(Base, TimestampMixin):
     """Represents a student's attempt at an exercise."""
 
     __tablename__ = "exercise_submissions"
@@ -78,7 +80,7 @@ class ExerciseSubmission(Base, TimestampMixin):
     execution_time_ms = Column(Integer, nullable=True)
 
     # Relationships
-    exercise = relationship("Exercise", back_populates="submissions")
+    exercise = relationship("AgentExercise", back_populates="submissions")
 
     __table_args__ = (
         CheckConstraint(
