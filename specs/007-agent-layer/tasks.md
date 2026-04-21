@@ -208,7 +208,7 @@ description: "Task list for AI Agent Layer (F07-F12) implementation"
 - [x] T066 [P] Contract tests in `backend/tests/contract/test_agent_api.py`: validate all 6 endpoints against OpenAPI spec in `specs/007-agent-layer/contracts/agent-api.yaml`
 - [x] T067 [P] Add DB indexes verification: confirm indexes on `user_id`, `session_id`, `created_at` exist on all new tables
 - [x] T068 Update `backend/src/models/__init__.py` exports to include all new agent models
-- [ ] T069 Run `black . && isort .` on all new files in `backend/`
+- [x] T069 Run `black . && isort .` on all new files in `backend/`
 - [ ] T070 Run full test suite: `pytest backend/tests/unit/test_triage_routing.py backend/tests/unit/test_concepts_agent.py backend/tests/unit/test_debug_agent.py backend/tests/unit/test_code_review_agent.py backend/tests/unit/test_exercise_agent.py backend/tests/unit/test_progress_agent.py backend/tests/unit/test_agent_schemas.py backend/tests/integration/test_agent_routes.py -v`
 - [ ] T071 Run quickstart.md validation: execute all curl commands from `specs/007-agent-layer/quickstart.md` and verify responses
 - [x] T072 Update `backend/src/api/v1/__init__.py` to export agents router
