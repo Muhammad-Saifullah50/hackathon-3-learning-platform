@@ -54,7 +54,7 @@ description: "Task list for AI Agent Layer (F07-F12) implementation"
 - [x] T017 Enhance agent system prompts in `backend/src/llm/prompts.py`: expand `get_concept_agent_prompt()`, `get_code_review_agent_prompt()`, `get_debug_agent_prompt()`, `get_exercise_agent_prompt()`, `get_triage_agent_prompt()`, `get_progress_agent_prompt()` with detailed instructions per spec requirements
 - [x] T018 Implement `BaseAgent` abstract class in `backend/src/services/agents/base.py` with protocol: `handle()`, `build_system_prompt()`, `stream_response()` methods, shared LlmClient/LlmService injection, and conversation history management
 - [x] T019 Register agent router in `backend/src/api/__init__.py` and `backend/src/main.py` (include v1/agents router under `/api/v1/agents`)
-- [ ] T020 Run `alembic upgrade head` and verify all 6 tables created with correct schema
+- [x] T020 Run `alembic upgrade head` and verify all 6 tables created with correct schema
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
