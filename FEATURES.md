@@ -376,9 +376,6 @@ Tracks mastery scores across topics and provides progress summaries.
 
 ---
 
-F11 generate→submit→grade roundtrip never exercised end-to-end against the live system (only chat-routing was tested in T071).
-F12 mastery calc tested only in unit tests (T059) — never against a user with seeded exercise/quiz data.
-If you want to close those, that's a small follow-up task ("F11/F12 e2e validation with seeded data") — not technically T071 scope.
 
 ### **F13: Student Dashboard**
 **Priority:** P2 (Student Features)
