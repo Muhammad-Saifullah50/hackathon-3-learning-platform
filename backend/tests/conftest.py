@@ -6,6 +6,8 @@ from typing import Generator
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -14,6 +16,17 @@ from src.auth.password import hash_password
 from src.database import Base, get_db
 from src.main import app
 from src.models.user import User
+
+
+@compiles(JSONB, "sqlite")
+def _compile_jsonb_sqlite(element, compiler, **kw):
+    return "JSON"
+
+
+@compiles(UUID, "sqlite")
+def _compile_uuid_sqlite(element, compiler, **kw):
+    return "VARCHAR(36)"
+
 
 # Test database URL (use in-memory SQLite for tests with StaticPool to share across connections)
 TEST_DATABASE_URL = "sqlite:///:memory:"

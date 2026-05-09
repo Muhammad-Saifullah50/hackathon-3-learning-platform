@@ -2,16 +2,22 @@
 
 AI agent instructions for LearnFlow — an AI-powered Python tutoring platform with multi-agent architecture.
 
+## Project Status (2026-05-09)
+
+Features **001–007 are complete and validated end-to-end**. The backend agent layer (F07) was validated against live Gemini on 2026-05-09 (T071): all 6 quickstart chat scenarios route correctly through Triage → specialist agents and routing decisions persist to DB. See `CLAUDE.md` "Recent Changes" for the per-feature breakdown.
+
 ## Build & Development Commands
 
-**Note:** This project is in early planning phase. Build commands will be added as the tech stack is implemented.
+### Backend (Python 3.11+ / uv-managed venv at `backend/.venv`)
+- Run server: `cd backend && .venv/bin/uvicorn src.main:app --reload`
+- Apply migrations: `cd backend && uv run alembic upgrade head`
+- Tests: `cd backend && uv run pytest`
+- Format/lint: `cd backend && uv run black . && uv run isort .`
 
-### Planned Stack
-- Frontend: `npm run dev` - Start Next.js development server
-- Backend: `uvicorn main:app --reload` - Start FastAPI development server
-- Tests: `pytest` (Python) + `npm test` (TypeScript)
-- Lint: `black . && isort .` (Python) + `npm run lint` (TypeScript)
-- Format: `black . && isort .` (Python) + `npm run format` (TypeScript)
+### Frontend (Next.js 14+)
+- Dev: `npm run dev`
+- Tests: `npm test`
+- Lint/format: `npm run lint && npm run format`
 
 ## Code Style
 
@@ -128,6 +134,15 @@ AI agent instructions for LearnFlow — an AI-powered Python tutoring platform w
 - Each agent MUST have independent prompt templates in `/backend/llm/prompts/`
 - Agent responses MUST follow consistent JSON schema
 - Triage routing MUST be deterministic and testable
+
+### Implementation Notes (F07, learned during T071 validation)
+
+- **LLM provider wiring**: The agent layer uses the OpenAI Agents SDK with a custom `_ConfiguredLitellmProvider` in [backend/src/api/v1/agents.py](backend/src/api/v1/agents.py) that constructs `LitellmModel(model=settings.LLM_MODEL, base_url=settings.LLM_BASE_URL or None, api_key=settings.LLM_API_KEY)`. Do **not** use the bare `LitellmProvider()` from the SDK — it ignores project settings and falls back to OpenAI/`gpt-4.1`.
+- **Streaming is non-streaming**: Use `await Runner.run(...)` (not `Runner.run_streamed`) and emit the final output as a single SSE chunk. `Runner.run_streamed` with `LitellmModel` is broken in the SDK — see [openai/openai-agents-python#601](https://github.com/openai/openai-agents-python/issues/601) (Pydantic `ResponseCreatedEvent.sequence_number` validation error). Revisit when that issue closes.
+- **LiteLLM model identifiers**:
+  - For Google AI Studio (Gemini): `LLM_MODEL=gemini/gemini-2.5-flash`, `LLM_BASE_URL=` (empty — LiteLLM picks Google's URL).
+  - For an OpenAI-compatible endpoint (incl. Gemini's `/v1beta/openai/`): `LLM_MODEL=openai/<model-name>`, `LLM_BASE_URL=<full-base-url>`.
+  - Do **not** mix prefixes — passing `gemini/...` with a custom `api_base` triggers `Vertex_ai_betaException` because LiteLLM appends the wrong path.
 
 ## Testing
 

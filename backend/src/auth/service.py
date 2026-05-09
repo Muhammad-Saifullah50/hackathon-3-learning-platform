@@ -7,6 +7,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+
 from src.auth.jwt import create_access_token, create_refresh_token
 from src.auth.password import check_password_breach, hash_password, verify_password
 from src.auth.rate_limit import RateLimiter
@@ -130,9 +131,7 @@ class AuthService:
         # Check rate limiting by email
         lockout_until = self.rate_limiter.check_rate_limit(email, "email")
         if lockout_until:
-            remaining_seconds = self.rate_limiter.get_remaining_lockout_seconds(
-                lockout_until
-            )
+            remaining_seconds = self.rate_limiter.get_remaining_lockout_seconds(lockout_until)
             logger.warning(
                 f"Login rate limited by email: {email}, remaining_seconds: {remaining_seconds}"
             )
@@ -145,9 +144,7 @@ class AuthService:
         if ip_address:
             lockout_until = self.rate_limiter.check_rate_limit(ip_address, "ip")
             if lockout_until:
-                remaining_seconds = self.rate_limiter.get_remaining_lockout_seconds(
-                    lockout_until
-                )
+                remaining_seconds = self.rate_limiter.get_remaining_lockout_seconds(lockout_until)
                 logger.warning(
                     f"Login rate limited by IP: {ip_address}, email: {email}, remaining_seconds: {remaining_seconds}"
                 )
@@ -173,7 +170,7 @@ class AuthService:
             )
 
         # Check email verification for teachers and admins
-        if user.role.value in ["teacher", "admin"] and user.email_verified_at is None:
+        if user.role in ["teacher", "admin"] and user.email_verified_at is None:
             logger.warning(
                 f"Login failed - email not verified for user_id: {user.id}, email: {email}"
             )
@@ -200,9 +197,7 @@ class AuthService:
         )
 
         # Create access token with session_id
-        access_token = create_access_token(
-            user.id, user.role.value, user.email, session.id
-        )
+        access_token = create_access_token(user.id, user.role, user.email, session.id)
 
         logger.info(
             f"Login successful - user_id: {user.id}, email: {email}, session_id: {session.id}, ip_address: {ip_address}"
@@ -255,9 +250,7 @@ class AuthService:
         # Get user
         user = self.user_repo.get_by_id(session.user_id)
         if not user:
-            logger.error(
-                f"Token refresh failed - user not found for session_id: {session.id}"
-            )
+            logger.error(f"Token refresh failed - user not found for session_id: {session.id}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User not found",
@@ -279,9 +272,7 @@ class AuthService:
         )
 
         # Create new access token with session_id
-        access_token = create_access_token(
-            user.id, user.role.value, user.email, new_session.id
-        )
+        access_token = create_access_token(user.id, user.role, user.email, new_session.id)
 
         logger.info(
             f"Token refresh successful - user_id: {user.id}, old_session_id: {session.id}, new_session_id: {new_session.id}"
@@ -356,9 +347,7 @@ class AuthService:
 
         # Check if email is already verified
         if user.email_verified_at:
-            logger.warning(
-                f"Email verification failed - already verified for user_id: {user.id}"
-            )
+            logger.warning(f"Email verification failed - already verified for user_id: {user.id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email is already verified",
@@ -372,9 +361,7 @@ class AuthService:
         self.db.commit()
         self.db.refresh(user)
 
-        logger.info(
-            f"Email verified successfully - user_id: {user.id}, email: {user.email}"
-        )
+        logger.info(f"Email verified successfully - user_id: {user.id}, email: {user.email}")
         return user
 
     async def resend_verification_email(self, email: str) -> str:
@@ -395,9 +382,7 @@ class AuthService:
         # Get user
         user = self.user_repo.get_by_email(email)
         if not user:
-            logger.warning(
-                f"Resend verification failed - user not found for email: {email}"
-            )
+            logger.warning(f"Resend verification failed - user not found for email: {email}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
@@ -449,9 +434,7 @@ class AuthService:
         # Create password reset token
         reset_token = self.password_reset_repo.create_token(user.id)
 
-        logger.info(
-            f"Password reset token created - user_id: {user.id}, email: {email}"
-        )
+        logger.info(f"Password reset token created - user_id: {user.id}, email: {email}")
 
         # TODO: Send password reset email (will be implemented in email service)
         # For now, return token for testing purposes

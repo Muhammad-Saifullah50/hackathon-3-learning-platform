@@ -209,14 +209,14 @@ description: "Task list for AI Agent Layer (F07-F12) implementation"
 - [x] T067 [P] Add DB indexes verification: confirm indexes on `user_id`, `session_id`, `created_at` exist on all new tables
 - [x] T068 Update `backend/src/models/__init__.py` exports to include all new agent models
 - [x] T069 Run `black . && isort .` on all new files in `backend/`
-- [ ] T070 Run full test suite: `pytest backend/tests/unit/test_triage_routing.py backend/tests/unit/test_concepts_agent.py backend/tests/unit/test_debug_agent.py backend/tests/unit/test_code_review_agent.py backend/tests/unit/test_exercise_agent.py backend/tests/unit/test_progress_agent.py backend/tests/unit/test_agent_schemas.py backend/tests/integration/test_agent_routes.py -v`
-- [ ] T071 Run quickstart.md validation: execute all curl commands from `specs/007-agent-layer/quickstart.md` and verify responses
+- [x] T070 Run full test suite: `pytest backend/tests/unit/test_triage_routing.py backend/tests/unit/test_concepts_agent.py backend/tests/unit/test_debug_agent.py backend/tests/unit/test_code_review_agent.py backend/tests/unit/test_exercise_agent.py backend/tests/unit/test_progress_agent.py backend/tests/unit/test_agent_schemas.py backend/tests/integration/test_agent_routes.py -v`
+- [x] T071 Run quickstart.md validation: execute all curl commands from `specs/007-agent-layer/quickstart.md` and verify responses
 - [x] T072 Update `backend/src/api/v1/__init__.py` to export agents router
 
 ---
 
 ## Dependencies & Execution Order
-
+j
 ### Phase Dependencies
 
 - **Setup (Phase 1)**: No dependencies - can start immediately

@@ -7,13 +7,15 @@ import logging
 import uuid
 
 from agents import RunConfig, Runner
-from agents.extensions.models.litellm_provider import LitellmProvider
+from agents.extensions.models.litellm_model import LitellmModel
+from agents.models.interface import Model, ModelProvider
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import get_current_user
+from src.config import settings
 from src.dependencies import (
     get_agent_session_repository,
     get_db,
@@ -48,17 +50,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["agents"])
 
 
-async def _sse_stream_generator(stream):
-    """Convert SDK stream events to SSE format."""
-    async for event in stream.stream_events():
-        event_type = getattr(event, "type", None)
-        if event_type == "agent_turn_end":
-            output = getattr(event, "output", None)
-            if output:
-                text = getattr(output, "content", str(output))
-                yield f"data: {text}\n\n"
-            yield "data: [DONE]\n\n"
-            break
+class _ConfiguredLitellmProvider(ModelProvider):
+    """LitellmProvider wired to project LLM settings (api_key, base_url, model)."""
+
+    def get_model(self, model_name: str | None) -> Model:
+        return LitellmModel(
+            model=model_name or settings.LLM_MODEL,
+            base_url=settings.LLM_BASE_URL or None,
+            api_key=settings.LLM_API_KEY or None,
+        )
+
+
+async def _sse_result_generator(result):
+    """Convert a non-streaming Runner.run result into a single-chunk SSE stream.
+
+    The OpenAI Agents SDK + LitellmModel streaming path is currently broken
+    (openai/openai-agents-python#601), so we run the agent to completion and
+    emit the final output as one SSE event followed by [DONE].
+    """
+    last_agent_name = getattr(getattr(result, "last_agent", None), "name", None)
+    if last_agent_name:
+        yield f"event: handoff\ndata: {last_agent_name}\n\n"
+    text = result.final_output if isinstance(result.final_output, str) else str(result.final_output)
+    if text:
+        yield f"data: {text}\n\n"
+    yield "data: [DONE]\n\n"
 
 
 @router.post(
@@ -121,9 +137,9 @@ async def agent_chat(
         user_message=request.message,
     )
 
-    run_config = RunConfig(model_provider=LitellmProvider())
+    run_config = RunConfig(model_provider=_ConfiguredLitellmProvider())
 
-    stream = Runner.run_streamed(
+    result = await Runner.run(
         triage_agent,
         input=request.message,
         context=lf_ctx,
@@ -131,8 +147,13 @@ async def agent_chat(
         run_config=run_config,
     )
 
+    if result.final_output:
+        await session_repo.add_message_to_history(
+            str(session_id), "assistant", str(result.final_output)
+        )
+
     return StreamingResponse(
-        _sse_stream_generator(stream),
+        _sse_result_generator(result),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -216,7 +237,7 @@ async def generate_exercise(
         exercise_agent,
         input=f"Generate a {request.difficulty}-level Python exercise on '{request.topic}'.",
         context=lf_ctx,
-        run_config=RunConfig(model_provider=LitellmProvider()),
+        run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
     )
 
     return {

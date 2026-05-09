@@ -316,5 +316,16 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon PostgreSQL via existing async engine — new tables for agent sessions, routing decisions, hint progression, exercises, exercise submissions, mastery records (007-agent-layer)
 
 ## Recent Changes
-- 001-auth: Added Python 3.11+ (backend), TypeScript/Next.js 14+ (frontend) + FastAPI, Better Auth, PyJWT, bcrypt, httpx (HaveIBeenPwned API), SQLAlchemy, Alembic
-- 002-database-schema: Completed database schema implementation with 7 Alembic migrations, 12 SQLAlchemy models (User, UserProfile, UserStreak, Module, Lesson, Exercise, Quiz, UserExerciseProgress, UserQuizAttempt, UserModuleMastery, CodeSubmission, LLMCache), 5 repository classes with async operations, Pydantic validation schemas, and seeded 8 Python curriculum modules. Database layer ready for API endpoint implementation.
+
+Features **001 through 007 are complete**. Backend now exposes auth, profile, code execution, LLM, and full agent endpoints; all migrations applied to Neon.
+
+- 001-auth: Python 3.11+ (backend), TypeScript/Next.js 14+ (frontend) + FastAPI, Better Auth, PyJWT, bcrypt, httpx (HaveIBeenPwned API), SQLAlchemy, Alembic.
+- 002-database-schema: 7 Alembic migrations, 12 SQLAlchemy models (User, UserProfile, UserStreak, Module, Lesson, Exercise, Quiz, UserExerciseProgress, UserQuizAttempt, UserModuleMastery, CodeSubmission, LLMCache), 5 repository classes with async operations, Pydantic validation, and 8 seeded Python curriculum modules.
+- 003-api-gateway-service-mesh: Kong + Dapr + Helm wiring on Minikube; Redis/PostgreSQL backing services provisioned via Bitnami charts.
+- 004-user-management: Profile, preferences, and admin user-management endpoints on top of F01/F02.
+- 005-python-code-sandbox: Docker-based isolated execution sandbox with 5s timeout, 50MB memory, no network, stdlib-only imports, AST-validated.
+- 006-llm-provider: `LlmClient` + `LlmService` with LiteLLM backend, prompt caching in `llm_cache`, prompt templates in `src/llm/prompts.py`.
+- 007-agent-layer (T071 validated 2026-05-09): All 6 chat scenarios route correctly through TriageAgent → specialist agents (concepts/debug/code_review/exercise/progress) against live Gemini. Routing decisions persisted to DB. Drive-by fixes landed during validation:
+  - Added `_ConfiguredLitellmProvider` in [src/api/v1/agents.py](backend/src/api/v1/agents.py) so the OpenAI Agents SDK actually uses `LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL` settings (previously instantiated `LitellmProvider()` with no args and fell back to OpenAI/`gpt-4.1`).
+  - Chat endpoint switched from `Runner.run_streamed` to `Runner.run` due to known upstream SDK bug [openai/openai-agents-python#601](https://github.com/openai/openai-agents-python/issues/601) — streaming with `LitellmModel` raises a Pydantic `ResponseCreatedEvent.sequence_number` validation error mid-stream. Output is wrapped in a single SSE chunk + handoff event.
+  - `user.role.value` → `user.role` at 3 call sites in [src/auth/service.py](backend/src/auth/service.py) (column is `String`, not Enum) so `/api/auth/login` no longer 500s.
