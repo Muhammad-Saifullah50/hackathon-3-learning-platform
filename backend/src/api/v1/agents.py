@@ -36,11 +36,21 @@ from src.repositories.user_repository import UserStreakRepository
 from src.schemas.agents import (
     AgentChatRequest,
     AgentErrorResponse,
+    CodeReviewRequest,
+    ConceptsExplainRequest,
+    DebugAnalyzeRequest,
     ExerciseGenerationRequest,
     ExerciseSubmissionRequest,
     HintAdvanceRequest,
 )
-from src.services.agents.agents import get_exercise_agent, get_triage_agent
+from src.services.agents.agents import (
+    get_code_review_agent,
+    get_concepts_agent,
+    get_debug_agent,
+    get_exercise_agent,
+    get_triage_agent,
+)
+from src.services.agents.exercise import ExerciseService
 from src.services.agents.context import LearnFlowContext
 from src.services.agents.hooks import LearnFlowHooks
 from src.services.agents.triage import classify_intent, get_agent_for_intent
@@ -264,29 +274,18 @@ async def submit_exercise(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Submit code for grading."""
+    """Submit code for grading against exercise test cases using the sandbox."""
     exercise = await exercise_repo.get_exercise(exercise_id)
     if not exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
 
-    test_cases = exercise.test_cases
-    test_results = []
-    for i, tc in enumerate(test_cases):
-        test_results.append(
-            {
-                "test_index": i,
-                "passed": False,
-                "error_message": "Sandbox execution not yet integrated.",
-            }
-        )
-
-    score = 0.0
-    return {
-        "score": score,
-        "test_results": test_results,
-        "feedback": "Sandbox integration pending. Review your code manually.",
-        "execution_time_ms": None,
-    }
+    service = ExerciseService(db=db, exercise_repo=exercise_repo)
+    result = await service.grade_submission(
+        exercise=exercise,
+        submitted_code=request.code,
+        user_id=current_user.id,
+    )
+    return result
 
 
 @router.post(
@@ -423,4 +422,256 @@ async def get_progress(
         "streak": streak_data,
         "recommendations": recommendations,
         "missing_components": list(all_missing),
+    }
+
+
+@router.post(
+    "/concepts/explain",
+    summary="Explain a Python concept",
+    description=(
+        "Send a concept question directly to the Concepts Agent. "
+        "Adapts explanation to the student's level and always includes runnable examples."
+    ),
+    responses={
+        200: {"description": "Streaming explanation via Server-Sent Events"},
+        401: {"model": AgentErrorResponse, "description": "Unauthorized"},
+        502: {"model": AgentErrorResponse, "description": "LLM provider error"},
+    },
+)
+async def concepts_explain(
+    request: ConceptsExplainRequest,
+    session_repo: AgentSessionRepository = Depends(get_agent_session_repository),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Explain a Python concept via the Concepts Agent."""
+    logger.info("Concepts explain request from user=%s", current_user.id)
+
+    if request.session_id:
+        session_obj = await session_repo.get_session(request.session_id)
+        if not session_obj or str(session_obj.user_id) != str(current_user.id):
+            raise HTTPException(status_code=404, detail="Session not found")
+        session_id = session_obj.id
+    else:
+        session_obj = await session_repo.create_session(user_id=current_user.id)
+        session_id = session_obj.id
+
+    await session_repo.add_message_to_history(str(session_id), "user", request.question)
+
+    lf_ctx = LearnFlowContext(
+        user_id=current_user.id,
+        session_id=session_id,
+        db=db,
+        topic=request.topic,
+        level=request.level or "beginner",
+    )
+    agent = get_concepts_agent()
+    try:
+        result = await Runner.run(
+            agent,
+            input=request.question,
+            context=lf_ctx,
+            run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
+        )
+    except Exception as exc:
+        logger.exception("Concepts agent error: %s", exc)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    await session_repo.add_message_to_history(
+        str(session_id), "assistant", result.final_output or ""
+    )
+    return StreamingResponse(
+        _sse_result_generator(result),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post(
+    "/code-review/analyze",
+    summary="Analyze code for quality and correctness",
+    description=(
+        "Submit code directly to the Code Review Agent for PEP 8, "
+        "correctness, performance, and readability feedback."
+    ),
+    responses={
+        200: {"description": "Streaming review via Server-Sent Events"},
+        401: {"model": AgentErrorResponse, "description": "Unauthorized"},
+        502: {"model": AgentErrorResponse, "description": "LLM provider error"},
+    },
+)
+async def code_review_analyze(
+    request: CodeReviewRequest,
+    session_repo: AgentSessionRepository = Depends(get_agent_session_repository),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Review submitted code via the Code Review Agent."""
+    logger.info("Code review request from user=%s", current_user.id)
+
+    if request.session_id:
+        session_obj = await session_repo.get_session(request.session_id)
+        if not session_obj or str(session_obj.user_id) != str(current_user.id):
+            raise HTTPException(status_code=404, detail="Session not found")
+        session_id = session_obj.id
+    else:
+        session_obj = await session_repo.create_session(user_id=current_user.id)
+        session_id = session_obj.id
+
+    user_message = request.question or "Please review my code."
+    await session_repo.add_message_to_history(str(session_id), "user", user_message)
+
+    lf_ctx = LearnFlowContext(
+        user_id=current_user.id,
+        session_id=session_id,
+        db=db,
+        code_snippet=request.code,
+    )
+    agent = get_code_review_agent()
+    try:
+        result = await Runner.run(
+            agent,
+            input=user_message,
+            context=lf_ctx,
+            run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
+        )
+    except Exception as exc:
+        logger.exception("Code review agent error: %s", exc)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    await session_repo.add_message_to_history(
+        str(session_id), "assistant", result.final_output or ""
+    )
+    return StreamingResponse(
+        _sse_result_generator(result),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post(
+    "/debug/analyze",
+    summary="Debug code errors with progressive hints",
+    description=(
+        "Submit broken code and optional error message to the Debug Agent. "
+        "Returns progressive hints (3 levels) before revealing the full solution."
+    ),
+    responses={
+        200: {"description": "Streaming debug hints via Server-Sent Events"},
+        401: {"model": AgentErrorResponse, "description": "Unauthorized"},
+        502: {"model": AgentErrorResponse, "description": "LLM provider error"},
+    },
+)
+async def debug_analyze(
+    request: DebugAnalyzeRequest,
+    session_repo: AgentSessionRepository = Depends(get_agent_session_repository),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Analyze broken code via the Debug Agent with progressive hints."""
+    logger.info("Debug analyze request from user=%s", current_user.id)
+
+    if request.session_id:
+        session_obj = await session_repo.get_session(request.session_id)
+        if not session_obj or str(session_obj.user_id) != str(current_user.id):
+            raise HTTPException(status_code=404, detail="Session not found")
+        session_id = session_obj.id
+    else:
+        session_obj = await session_repo.create_session(user_id=current_user.id)
+        session_id = session_obj.id
+
+    parts = [request.question or "Help me debug my code."]
+    if request.error_message:
+        parts.append(f"Error: {request.error_message}")
+    user_message = "\n".join(parts)
+    await session_repo.add_message_to_history(str(session_id), "user", user_message)
+
+    lf_ctx = LearnFlowContext(
+        user_id=current_user.id,
+        session_id=session_id,
+        db=db,
+        code_snippet=request.code,
+    )
+    agent = get_debug_agent()
+    try:
+        result = await Runner.run(
+            agent,
+            input=user_message,
+            context=lf_ctx,
+            run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
+        )
+    except Exception as exc:
+        logger.exception("Debug agent error: %s", exc)
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    await session_repo.add_message_to_history(
+        str(session_id), "assistant", result.final_output or ""
+    )
+    return StreamingResponse(
+        _sse_result_generator(result),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.get(
+    "/progress/recommendations",
+    summary="Get personalized learning recommendations",
+    description=(
+        "Return personalized recommendations based on weak areas, streak status, "
+        "and overall mastery. Derived from the full progress summary."
+    ),
+    responses={
+        200: {"description": "Recommendations returned successfully"},
+        401: {"model": AgentErrorResponse, "description": "Unauthorized"},
+    },
+)
+async def get_recommendations(
+    mastery_repo: MasteryRepository = Depends(get_mastery_repository),
+    streak_repo: UserStreakRepository = Depends(get_user_streak_repository),
+    current_user: User = Depends(get_current_user),
+):
+    """Get personalized recommendations based on the student's progress."""
+    mastery_records = await mastery_repo.get_user_mastery_records(current_user.id)
+
+    weak_areas = [r.topic for r in mastery_records if r.score < 50]
+    strong_areas = [r.topic for r in mastery_records if r.score >= 71]
+
+    streak_data = None
+    try:
+        streak = await streak_repo.get_by_user_id(current_user.id)
+        if streak:
+            streak_data = {
+                "current_streak": streak.current_streak,
+                "longest_streak": streak.longest_streak,
+            }
+    except Exception:
+        pass
+
+    recommendations = []
+    if weak_areas:
+        recommendations.append(f"Focus on improving: {', '.join(weak_areas)}")
+        recommendations.append(
+            f"Try more exercises on {weak_areas[0]} to build mastery."
+        )
+    if strong_areas:
+        recommendations.append(
+            f"Great work on {', '.join(strong_areas[:3])}! Consider advancing to the next topic."
+        )
+    if streak_data and streak_data["current_streak"] > 0:
+        recommendations.append(
+            f"You're on a {streak_data['current_streak']}-day streak — keep it up!"
+        )
+    elif streak_data is not None:
+        recommendations.append("Log in daily to build your streak and reinforce learning.")
+    if not recommendations:
+        recommendations.append(
+            "Complete exercises and quizzes to unlock personalised recommendations."
+        )
+
+    return {
+        "recommendations": recommendations,
+        "weak_areas": weak_areas,
+        "strong_areas": strong_areas,
+        "streak": streak_data,
     }

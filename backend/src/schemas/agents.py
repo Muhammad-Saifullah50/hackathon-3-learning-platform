@@ -151,6 +151,32 @@ class HintResponse(BaseModel):
     solution_available: bool
 
 
+class ConceptsExplainRequest(BaseModel):
+    """Request schema for the concepts explain endpoint."""
+
+    question: str = Field(..., min_length=1, max_length=2000)
+    topic: Optional[str] = None
+    level: Optional[str] = Field(None, pattern="^(beginner|intermediate|advanced)$")
+    session_id: Optional[str] = None
+
+
+class CodeReviewRequest(BaseModel):
+    """Request schema for the code review analyze endpoint."""
+
+    code: str = Field(..., min_length=1)
+    question: Optional[str] = None
+    session_id: Optional[str] = None
+
+
+class DebugAnalyzeRequest(BaseModel):
+    """Request schema for the debug analyze endpoint."""
+
+    code: str = Field(..., min_length=1)
+    error_message: Optional[str] = None
+    question: Optional[str] = None
+    session_id: Optional[str] = None
+
+
 class AgentErrorResponse(BaseModel):
     """Standard error response for agent endpoints."""
 

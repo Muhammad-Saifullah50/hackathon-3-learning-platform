@@ -301,6 +301,29 @@ except Exception as e:
             )  # Rough estimate: 10x output size
         return 1024  # 1KB baseline
 
+    async def run_test_cases(
+        self, code: str, test_cases: list, timeout: int = 5
+    ) -> list:
+        """Run submitted code against a list of test cases.
+
+        Each test case is a dict with 'assert_statement' (and optionally 'input',
+        'expected_output'). Returns a list of result dicts with 'passed', 'error'
+        and 'test_index' fields.
+        """
+        results = []
+        for i, tc in enumerate(test_cases):
+            assert_stmt = tc.get("assert_statement", "")
+            full_code = f"{code}\n\n{assert_stmt}" if assert_stmt else code
+            result = await self.execute_code(full_code, timeout_seconds=timeout)
+            results.append(
+                {
+                    "test_index": i,
+                    "passed": result.success,
+                    "error": result.error_message if not result.success else None,
+                }
+            )
+        return results
+
     def cleanup_temp_files(self, *file_paths):
         """Clean up temporary files after execution."""
         for file_path in file_paths:
