@@ -314,6 +314,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Docker 24.x (containerization) + Python 3.11+ (sandbox execution) + AST parsing (import validation) (005-python-code-sandbox)
 - Python 3.11+ (matches existing backend) + FastAPI, LiteLLM (via existing LlmClient), SQLAlchemy 2.0 (async sessions), Pydantic v2 (007-agent-layer)
 - Neon PostgreSQL via existing async engine — new tables for agent sessions, routing decisions, hint progression, exercises, exercise submissions, mastery records (007-agent-layer)
+- TypeScript 5+ / React 19 (013-frontend-foundation)
+- Neon PostgreSQL — shared DB; Better Auth adds 4 new tables (013-frontend-foundation)
 
 ## Recent Changes
 
