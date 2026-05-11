@@ -228,8 +228,11 @@ class ErrorParser:
 
     def extract_line_number(self, error_message: str) -> Optional[int]:
         """Extract the line number from an error message if available."""
-        match = re.search(r"line (\d+)", error_message)
-        return int(match.group(1)) if match else None
+        match = re.search(r'File "<string>", line (\d+)', error_message)
+        if match:
+            return int(match.group(1))
+        matches = re.findall(r"line (\d+)", error_message)
+        return int(matches[-1]) if matches else None
 
     def classify_error_type(self, error_message: str) -> str:
         """Classify the error type from the error message."""

@@ -34,6 +34,7 @@ class IdentifierType(str, PyEnum):
 
     IP = "ip"
     EMAIL = "email"
+    USER_DAILY = "user_daily"
 
 
 class Session(Base):
@@ -114,6 +115,6 @@ class RateLimitCounter(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
-        CheckConstraint("identifier_type IN ('ip', 'email')", name="check_identifier_type"),
+        CheckConstraint("identifier_type IN ('ip', 'email', 'user_daily')", name="check_identifier_type"),
         CheckConstraint("attempt_count >= 0", name="check_attempt_count_positive"),
     )

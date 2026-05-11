@@ -18,6 +18,7 @@ from src.database import Base
 from src.models.cache import LLMCache
 from src.models.curriculum import Exercise, Lesson, Module, Quiz
 from src.models.progress import UserExerciseProgress, UserModuleMastery, UserQuizAttempt
+from src.models.code_session import CodeSession
 from src.models.submission import CodeSubmission
 
 # Import all models here to ensure they're registered with Base

@@ -22,10 +22,16 @@ class DockerSandbox(SandboxInterface):
     """Docker-based implementation of the code execution sandbox."""
 
     def __init__(self):
-        self.client = docker.from_env()
+        self._client = None  # lazy — connect on first use so app starts without Docker
         self.python_image = os.getenv("SANDBOX_PYTHON_IMAGE", "python:3.11-alpine")
         self.import_validator = ImportValidator()
         self.error_parser = ErrorParser()
+
+    @property
+    def client(self):
+        if self._client is None:
+            self._client = docker.from_env()
+        return self._client
 
     async def execute_code(
         self, code: str, timeout_seconds: int = 5, memory_limit: str = "50MB"
@@ -288,8 +294,13 @@ except Exception as e:
 
     def _extract_line_number(self, error_str: str) -> Optional[int]:
         """Extract the line number from an error message if available."""
-        match = re.search(r"line (\d+)", error_str)
-        return int(match.group(1)) if match else None
+        # Prefer the user-code frame: exec'd code shows as File "<string>", line N
+        match = re.search(r'File "<string>", line (\d+)', error_str)
+        if match:
+            return int(match.group(1))
+        # Fallback: last "line N" in the traceback avoids the wrapper script frame
+        matches = re.findall(r"line (\d+)", error_str)
+        return int(matches[-1]) if matches else None
 
     def _estimate_memory_usage(self, output_str: str) -> Optional[int]:
         """Estimate memory usage based on output size."""

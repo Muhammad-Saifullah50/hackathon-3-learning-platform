@@ -7,6 +7,7 @@ from src.models.base import SoftDeleteMixin, TimestampMixin
 from src.models.cache import LLMCache
 from src.models.curriculum import Exercise, Lesson, Module, Quiz
 from src.models.progress import UserExerciseProgress, UserModuleMastery, UserQuizAttempt
+from src.models.code_session import CodeSession
 from src.models.submission import CodeSubmission
 from src.models.user import User, UserProfile, UserStreak
 
@@ -29,6 +30,8 @@ __all__ = [
     "UserModuleMastery",
     # Submission model
     "CodeSubmission",
+    # Code session model
+    "CodeSession",
     # Cache model
     "LLMCache",
     # Auth models

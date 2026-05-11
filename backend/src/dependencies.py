@@ -18,9 +18,11 @@ from src.repositories import (
     UserStreakRepository,
 )
 from src.repositories.agent_session_repository import AgentSessionRepository
+from src.repositories.code_session_repository import CodeSessionRepository
 from src.repositories.exercise_repository import ExerciseRepository
 from src.repositories.mastery_repository import MasteryRepository
 from src.repositories.routing_repository import RoutingRepository
+from src.services.code_session_service import CodeSessionService
 
 
 # Database session dependency
@@ -126,3 +128,17 @@ async def get_mastery_repository(
 ) -> MasteryRepository:
     """Get MasteryRepository instance."""
     return MasteryRepository(db)
+
+
+async def get_code_session_repository(
+    db: AsyncSession = Depends(get_db),
+) -> CodeSessionRepository:
+    """Get CodeSessionRepository instance."""
+    return CodeSessionRepository(db)
+
+
+async def get_code_session_service(
+    repo: CodeSessionRepository = Depends(get_code_session_repository),
+) -> CodeSessionService:
+    """Get CodeSessionService instance."""
+    return CodeSessionService(repo)

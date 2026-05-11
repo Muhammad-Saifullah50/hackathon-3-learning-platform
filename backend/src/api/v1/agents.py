@@ -18,6 +18,7 @@ from src.auth.dependencies import get_current_user
 from src.config import settings
 from src.dependencies import (
     get_agent_session_repository,
+    get_code_session_service,
     get_db,
     get_exercise_repository,
     get_mastery_repository,
@@ -25,6 +26,8 @@ from src.dependencies import (
     get_routing_repository,
     get_user_streak_repository,
 )
+from src.schemas.code_editor import RateLimitErrorResponse
+from src.services.code_session_service import CodeSessionService
 from src.models import User
 from src.models.agent_session import HintProgression
 from src.repositories.agent_session_repository import AgentSessionRepository
@@ -48,6 +51,7 @@ from src.services.agents.agents import (
     get_concepts_agent,
     get_debug_agent,
     get_exercise_agent,
+    get_progress_agent,
     get_triage_agent,
 )
 from src.services.agents.exercise import ExerciseService
@@ -71,13 +75,15 @@ class _ConfiguredLitellmProvider(ModelProvider):
         )
 
 
-async def _sse_result_generator(result):
+async def _sse_result_generator(result, session_id: str | None = None):
     """Convert a non-streaming Runner.run result into a single-chunk SSE stream.
 
     The OpenAI Agents SDK + LitellmModel streaming path is currently broken
     (openai/openai-agents-python#601), so we run the agent to completion and
     emit the final output as one SSE event followed by [DONE].
     """
+    if session_id:
+        yield f"event: session\ndata: {session_id}\n\n"
     last_agent_name = getattr(getattr(result, "last_agent", None), "name", None)
     if last_agent_name:
         yield f"event: handoff\ndata: {last_agent_name}\n\n"
@@ -110,9 +116,27 @@ async def agent_chat(
     routing_repo: RoutingRepository = Depends(get_routing_repository),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    code_session_service: CodeSessionService = Depends(get_code_session_service),
 ):
     """Chat with the agent system. Routes the question to the appropriate specialist."""
     logger.info("Agent chat request from user=%s", current_user.id)
+
+    # Rate limit code reviews (requests that include code_snippet)
+    if request.code_snippet:
+        from datetime import date, datetime, timedelta, timezone
+        allowed = await code_session_service.check_and_increment_daily_limit(
+            db, current_user.id, "review", limit=5
+        )
+        if not allowed:
+            retry_after = (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=429,
+                content=RateLimitErrorResponse(
+                    message="Daily review limit reached (5 reviews/day). Try again tomorrow.",
+                    retry_after=retry_after,
+                ).model_dump(),
+            )
 
     triage_result = classify_intent(request.message)
     agent_name = get_agent_for_intent(triage_result.intent)
@@ -140,7 +164,14 @@ async def agent_chat(
         intent=triage_result.intent,
     )
 
-    triage_agent = get_triage_agent()
+    _agent_factory_map = {
+        "code_review": get_code_review_agent,
+        "concepts": get_concepts_agent,
+        "debug": get_debug_agent,
+        "exercise": get_exercise_agent,
+        "progress": get_progress_agent,
+    }
+    selected_agent = _agent_factory_map.get(agent_name, get_triage_agent)()
     hooks = LearnFlowHooks(
         session_repo=session_repo,
         routing_repo=routing_repo,
@@ -150,7 +181,7 @@ async def agent_chat(
     run_config = RunConfig(model_provider=_ConfiguredLitellmProvider())
 
     result = await Runner.run(
-        triage_agent,
+        selected_agent,
         input=request.message,
         context=lf_ctx,
         hooks=hooks,
@@ -163,7 +194,7 @@ async def agent_chat(
         )
 
     return StreamingResponse(
-        _sse_result_generator(result),
+        _sse_result_generator(result, session_id=str(session_id)),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

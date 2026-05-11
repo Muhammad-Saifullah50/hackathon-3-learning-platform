@@ -1,0 +1,296 @@
+openapi: "3.1.0"
+info:
+  title: Interactive Code Editor API (F14)
+  version: "1.0.0"
+  description: |
+    New and modified endpoints for the Interactive Code Editor feature.
+    All endpoints require Bearer JWT authentication.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CodeSession:
+      type: object
+      required: [context_key, code, updated_at]
+      properties:
+        context_key:
+          type: string
+          description: '"playground" or exercise UUID'
+          example: "playground"
+        code:
+          type: string
+          description: Saved Python code content
+        updated_at:
+          type: string
+          format: date-time
+
+    SaveCodeRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: Python code to persist
+          maxLength: 100000
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+    RateLimitErrorResponse:
+      type: object
+      required: [detail, retry_after]
+      properties:
+        detail:
+          type: string
+          example: "Daily execution limit reached. You can run code again tomorrow."
+        retry_after:
+          type: string
+          description: ISO date when the limit resets (next calendar day)
+          example: "2026-05-11"
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ──────────────────────────────────────────────────────────
+  # Code Session Persistence (NEW)
+  # ──────────────────────────────────────────────────────────
+  /api/v1/code-sessions/{context_key}:
+    get:
+      summary: Load saved code for a context
+      description: |
+        Returns the student's last saved code for the given context key.
+        Returns 404 if no code has been saved yet for this context.
+      tags: [code-editor]
+      parameters:
+        - name: context_key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: '"playground" or exercise UUID'
+          example: "playground"
+      responses:
+        "200":
+          description: Saved code session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeSession"
+        "404":
+          description: No saved code for this context yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+
+    put:
+      summary: Save (upsert) code for a context
+      description: |
+        Creates or updates the student's saved code for the given context key.
+        Uses PostgreSQL INSERT ... ON CONFLICT DO UPDATE (single round trip).
+        Called automatically on Run, Submit, and Review with Tutor actions.
+      tags: [code-editor]
+      parameters:
+        - name: context_key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: '"playground" or exercise UUID'
+          example: "playground"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveCodeRequest"
+      responses:
+        "200":
+          description: Code saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CodeSession"
+        "401":
+          description: Unauthorized
+        "422":
+          description: Validation error (e.g., code too long)
+
+  # ──────────────────────────────────────────────────────────
+  # Code Execution (EXISTING — rate limit added)
+  # ──────────────────────────────────────────────────────────
+  /api/v1/code-execution:
+    post:
+      summary: Execute Python code in sandbox
+      description: |
+        Executes student Python code in an isolated sandbox (5s timeout, 50MB memory).
+        Rate limited to 3 requests per student per calendar day.
+        Returns execution result including stdout, stderr, execution time, and error info.
+      tags: [code-editor]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  description: Python code to execute
+                module_id:
+                  type: string
+                  nullable: true
+                lesson_id:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: Execution result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success, error, timeout]
+                  stdout:
+                    type: string
+                  stderr:
+                    type: string
+                  execution_time_ms:
+                    type: integer
+                  timed_out:
+                    type: boolean
+                  error_line:
+                    type: integer
+                    nullable: true
+                    description: Line number extracted from stderr for editor highlighting
+        "429":
+          description: Daily execution limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitErrorResponse"
+        "401":
+          description: Unauthorized
+
+  # ──────────────────────────────────────────────────────────
+  # Agent Chat (EXISTING — used for code feedback + tutor panel)
+  # ──────────────────────────────────────────────────────────
+  /api/v1/agents/chat:
+    post:
+      summary: Send message to agent system
+      description: |
+        Used for both conversation channels:
+        - Code feedback: include code_snippet + execution error context; session_id = "code-{context_key}-{user_id}"
+        - General tutor panel: no code_snippet; session_id = per-session UUID
+        Rate limited to 3 "review" requests (code_snippet present) per student per calendar day.
+        General tutor messages are NOT rate limited by this daily counter.
+      tags: [code-editor, agents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  maxLength: 2000
+                session_id:
+                  type: string
+                  nullable: true
+                code_snippet:
+                  type: string
+                  nullable: true
+                  description: Current editor code; presence triggers code review rate limit check
+                topic:
+                  type: string
+                  nullable: true
+      responses:
+        "200":
+          description: SSE stream with agent response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "429":
+          description: Daily review limit exceeded (only when code_snippet is present)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RateLimitErrorResponse"
+        "401":
+          description: Unauthorized
+
+  # ──────────────────────────────────────────────────────────
+  # Exercise Submission (EXISTING — invoked from Submit button)
+  # ──────────────────────────────────────────────────────────
+  /api/v1/agents/exercise-submit:
+    post:
+      summary: Submit code for graded exercise evaluation
+      description: |
+        Evaluates student code against exercise test cases.
+        Only available when editor is in embedded graded mode.
+        Submit button is disabled while request is in-flight.
+      tags: [code-editor, agents]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exercise_id, code]
+              properties:
+                exercise_id:
+                  type: string
+                  description: Exercise UUID (same as context_key)
+                code:
+                  type: string
+                  description: Student's submitted solution
+      responses:
+        "200":
+          description: Graded submission result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  passed:
+                    type: boolean
+                  failing_test_cases:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        input:
+                          type: string
+                        expected:
+                          type: string
+                        actual:
+                          type: string
+                  message:
+                    type: string
+        "401":
+          description: Unauthorized
+        "404":
+          description: Exercise not found

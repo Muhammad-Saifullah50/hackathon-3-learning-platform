@@ -316,6 +316,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon PostgreSQL via existing async engine — new tables for agent sessions, routing decisions, hint progression, exercises, exercise submissions, mastery records (007-agent-layer)
 - TypeScript 5+ / React 19 (013-frontend-foundation)
 - Neon PostgreSQL — shared DB; Better Auth adds 4 new tables (013-frontend-foundation)
+- Python 3.11+ (backend), TypeScript 5+ / React 19 (frontend) (014-interactive-code-editor)
+- Neon PostgreSQL (new `code_sessions` table), browser localStorage (auto-save fallback) (014-interactive-code-editor)
 
 ## Recent Changes
 

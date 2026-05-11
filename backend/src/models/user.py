@@ -59,6 +59,9 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     code_submissions = relationship(
         "CodeSubmission", back_populates="user", cascade="all, delete-orphan"
     )
+    code_sessions = relationship(
+        "CodeSession", back_populates="user", cascade="all, delete-orphan"
+    )
     sessions = relationship(
         "Session", back_populates="user", cascade="all, delete-orphan"
     )

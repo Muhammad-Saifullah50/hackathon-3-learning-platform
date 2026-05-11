@@ -45,7 +45,7 @@ class CodeExecutionResponse(BaseModel):
         pattern="^(success|timeout|error|blocked|infrastructure_failure)$",
     )
     execution_time_ms: int = Field(
-        ..., ge=0, le=8000, description="Time taken for execution in milliseconds"
+        ..., ge=0, description="Time taken for execution in milliseconds"
     )
     output: Optional[str] = Field(
         None, description="Program output captured during execution"
@@ -55,6 +55,9 @@ class CodeExecutionResponse(BaseModel):
     )
     error_type: Optional[str] = Field(
         None, description="Classification of error (e.g., SyntaxError, NameError)"
+    )
+    error_line: Optional[int] = Field(
+        None, description="Line number of the error, parsed from stderr (for editor highlighting)"
     )
     memory_used_bytes: Optional[int] = Field(
         None, description="Peak memory usage during execution in bytes"
