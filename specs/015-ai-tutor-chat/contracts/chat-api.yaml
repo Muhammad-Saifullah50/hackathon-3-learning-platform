@@ -1,0 +1,339 @@
+openapi: "3.1.0"
+info:
+  title: LearnFlow Chat API (F15)
+  version: "1.0.0"
+  description: >
+    Chat endpoints for the AI Tutor feature. All endpoints require a valid
+    session cookie (Better Auth). Responses use standard HTTP status codes.
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+  - url: https://api.learnflow.app/api/v1
+    description: Production
+
+security:
+  - cookieAuth: []
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+
+  schemas:
+    ConversationMessage:
+      type: object
+      required: [role, content, timestamp]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        agent_type:
+          type: string
+          nullable: true
+          enum: [triage, concepts, debug, code_review, exercise, progress, null]
+
+    ChatSessionListItem:
+      type: object
+      required: [id, title, message_count, last_message_at, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          description: "First 60 chars of the first student message, or auto-generated timestamp title"
+        surface:
+          type: string
+          nullable: true
+          enum: [standalone, embedded]
+        message_count:
+          type: integer
+          minimum: 0
+        last_message_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    ChatSessionDetail:
+      type: object
+      required: [id, title, conversation_history, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        surface:
+          type: string
+          nullable: true
+          enum: [standalone, embedded]
+        conversation_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationMessage'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ChatQuotaStatus:
+      type: object
+      required: [messages_sent_today, daily_limit, remaining, quota_reset_at]
+      properties:
+        messages_sent_today:
+          type: integer
+          minimum: 0
+          maximum: 5
+        daily_limit:
+          type: integer
+          example: 5
+        remaining:
+          type: integer
+          minimum: 0
+          maximum: 5
+        quota_reset_at:
+          type: string
+          format: date-time
+          description: "Next UTC midnight — when the counter resets to 0"
+
+    AgentChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: "Student's message. Truncated server-side at 2000 chars if needed."
+        session_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Existing session ID to continue. If absent, a new session is created."
+        topic:
+          type: string
+          nullable: true
+          description: "Hint for the triage agent (e.g., current lesson topic)"
+        code_snippet:
+          type: string
+          nullable: true
+          maxLength: 4096
+          description: "Current editor code (≤4 KB). Attached as context; not stored in history."
+        execution_output:
+          type: string
+          nullable: true
+          maxLength: 2000
+          description: "Last execution stdout+stderr. Attached as context."
+        surface:
+          type: string
+          nullable: true
+          enum: [standalone, embedded]
+          description: "Which chat surface sent this message."
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+    RateLimitErrorResponse:
+      type: object
+      required: [message, retry_after, remaining]
+      properties:
+        message:
+          type: string
+          example: "You've used all 5 daily messages. Come back tomorrow!"
+        retry_after:
+          type: string
+          format: date
+          description: "UTC date when the quota resets (next day)"
+        remaining:
+          type: integer
+          example: 0
+
+paths:
+  /agents/chat:
+    post:
+      operationId: sendChatMessage
+      summary: Send a message to the AI tutor
+      description: >
+        The student's message is processed by the Triage Agent, which classifies
+        intent and routes to the appropriate specialist agent. The response streams
+        via Server-Sent Events. A 429 is returned when the daily quota (5 messages)
+        is exhausted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentChatRequest'
+      responses:
+        "200":
+          description: >
+            Streaming SSE response. Events are emitted in order:
+            1. `event: session\ndata: {session_uuid}` — always first
+            2. `event: quota\ndata: {remaining_count}` — remaining messages after this one
+            3. `event: handoff\ndata: {agent_name}` — which specialist agent responded
+            4. `data: {text_token}` — progressive text tokens while agent is generating
+            5. `event: structured\ndata: {json}` — full typed structured response JSON (ConceptResponse, DebugResponse, ExerciseResponse, CodeReviewResponse, or ProgressResponse); frontend replaces streamed text with this
+            6. `data: [DONE]` — stream complete
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                event: session
+                data: 550e8400-e29b-41d4-a716-446655440000
+
+                event: quota
+                data: 4
+
+                event: handoff
+                data: exercise
+
+                data: Here is a list comprehension
+
+                data:  exercise for you:
+
+                event: structured
+                data: {"response_type":"exercise","title":"List Comprehension Practice","description":"Write a list comprehension that squares all even numbers from 1 to 20.","difficulty":"beginner","starter_code":{"code":"# Your code here\nnumbers = range(1, 21)\nresult = []\nprint(result)","language":"python","caption":"Starter template"},"expected_concepts":["list comprehension","range","conditionals"],"send_to_editor":{"code":"# Your code here\nnumbers = range(1, 21)\nresult = []\nprint(result)","language":"python","caption":"Starter template"}}
+
+                data: [DONE]
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "403":
+          description: Session belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Provided session_id not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "422":
+          description: Validation error (e.g., message too long)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: Daily chat quota exhausted (5 messages/day)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitErrorResponse'
+        "502":
+          description: LLM provider error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /agents/sessions:
+    get:
+      operationId: listChatSessions
+      summary: List the authenticated student's chat sessions
+      description: >
+        Returns up to 20 most-recent sessions (by updated_at DESC).
+        Use ?limit (max 50) to increase.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Array of session summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatSessionListItem'
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /agents/sessions/{session_id}:
+    get:
+      operationId: getChatSession
+      summary: Get full conversation history for a session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Session detail with full conversation history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSessionDetail'
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "403":
+          description: Session belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /agents/quota:
+    get:
+      operationId: getChatQuota
+      summary: Get remaining daily chat message quota
+      description: >
+        Returns the student's daily message usage and remaining allowance.
+        Used by the frontend to display the quota counter without sending a message.
+      responses:
+        "200":
+          description: Current quota status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatQuotaStatus'
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

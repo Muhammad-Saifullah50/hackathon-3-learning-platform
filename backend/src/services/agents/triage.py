@@ -7,6 +7,42 @@ triage agent's handoff descriptions and routing hooks.
 import re
 from dataclasses import dataclass, field
 
+OFF_TOPIC_PATTERNS: list[str] = [
+    r"\bpoem\b",
+    r"\brecipe\b",
+    r"\bcook(ing)?\b",
+    r"\bweather\b",
+    r"\bsport(s)?\b",
+    r"\bfootball\b",
+    r"\bbasketball\b",
+    r"\bsoccer\b",
+    r"\bhistory\b",
+    r"\bgeograph(y|ical)\b",
+    r"\bmovie\b",
+    r"\bmusic\b",
+    r"\bsong\b",
+    r"\bpolitics\b",
+    r"\bfrance\b",
+    r"\bwar\b",
+    r"\bocean\b",
+    r"\bwrite me a\b(?!.*python)",
+    r"\btell me about\b(?!.*python)",
+    r"\bjoke\b",
+    r"\bhoroscope\b",
+]
+
+PYTHON_ANCHOR_PATTERNS: list[str] = [
+    r"\bpython\b",
+    r"\bcode\b",
+    r"\bprogram\b",
+    r"\bfunction\b",
+    r"\bvariable\b",
+    r"\bloop\b",
+    r"\bclass\b",
+    r"\bimport\b",
+    r"\bdef\b",
+]
+
 INTENT_PATTERNS: dict[str, list[str]] = {
     "concept-explanation": [
         r"\bwhat\s+is\b",
@@ -53,8 +89,14 @@ INTENT_PATTERNS: dict[str, list[str]] = {
         r"\bchallenge\b",
         r"\btest\s+me\b",
         r"\bquiz\s+me\b",
-        r"\bgive\s+me\s+(a\s+)?(problem|exercise|challenge)\b",
+        r"\bgive\s+me\s+(a\s+)?(problem|exercise|challenge|task)\b",
+        r"\bgive\s+me\s+(some\s+)?(practice|exercises)\b",
         r"\bi\s+want\s+to\s+practice\b",
+        r"\bcoding\s+(challenge|problem|exercise)\b",
+        r"\bpractice\s+exercise\b",
+        r"\bgive\s+me\s+a\s+problem\b",
+        r"\bquiz\s+me\s+on\b",
+        r"\bsomething\s+to\s+practice\b",
     ],
     "progress-summary": [
         r"\bprogress\b",
@@ -75,6 +117,7 @@ INTENT_TO_AGENT: dict[str, str] = {
     "code-review": "code_review",
     "exercise-generation": "exercise",
     "progress-summary": "progress",
+    "off_topic": "none",
     "general": "triage",
 }
 
@@ -88,6 +131,17 @@ class TriageResult:
     matched_patterns: list[str] = field(default_factory=list)
 
 
+def _is_off_topic(message: str) -> bool:
+    """Return True if message is clearly off-topic (non-Python) with no Python anchor."""
+    compiled_off = [re.compile(p, re.IGNORECASE) for p in OFF_TOPIC_PATTERNS]
+    compiled_anchor = [re.compile(p, re.IGNORECASE) for p in PYTHON_ANCHOR_PATTERNS]
+
+    has_off_topic = any(p.search(message) for p in compiled_off)
+    has_python_anchor = any(p.search(message) for p in compiled_anchor)
+
+    return has_off_topic and not has_python_anchor
+
+
 def classify_intent(message: str) -> TriageResult:
     """Classify a student message into an intent category.
 
@@ -97,6 +151,9 @@ def classify_intent(message: str) -> TriageResult:
     Returns:
         TriageResult with intent, confidence, and matched patterns.
     """
+    if _is_off_topic(message):
+        return TriageResult(intent="off_topic", confidence=0.95, matched_patterns=[])
+
     compiled = {
         intent: [re.compile(p, re.IGNORECASE) for p in patterns]
         for intent, patterns in INTENT_PATTERNS.items()

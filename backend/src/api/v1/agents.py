@@ -3,21 +3,22 @@
 Agent-related API endpoints using the OpenAI Agents SDK.
 """
 
+import json
 import logging
 import uuid
 
-from agents import RunConfig, Runner
-from agents.extensions.models.litellm_model import LitellmModel
-from agents.models.interface import Model, ModelProvider
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import StreamingResponse
+from agents import InputGuardrailTripwireTriggered, RunConfig, Runner
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import get_current_user
 from src.config import settings
+from src.services.agents.model_provider import get_run_config
 from src.dependencies import (
     get_agent_session_repository,
+    get_chat_quota_service,
     get_code_session_service,
     get_db,
     get_exercise_repository,
@@ -27,6 +28,7 @@ from src.dependencies import (
     get_user_streak_repository,
 )
 from src.schemas.code_editor import RateLimitErrorResponse
+from src.services.chat_quota_service import ChatQuotaService
 from src.services.code_session_service import CodeSessionService
 from src.models import User
 from src.models.agent_session import HintProgression
@@ -39,6 +41,9 @@ from src.repositories.user_repository import UserStreakRepository
 from src.schemas.agents import (
     AgentChatRequest,
     AgentErrorResponse,
+    ChatQuotaStatus,
+    ChatSessionDetail,
+    ChatSessionListItem,
     CodeReviewRequest,
     ConceptsExplainRequest,
     DebugAnalyzeRequest,
@@ -64,33 +69,80 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["agents"])
 
 
-class _ConfiguredLitellmProvider(ModelProvider):
-    """LitellmProvider wired to project LLM settings (api_key, base_url, model)."""
-
-    def get_model(self, model_name: str | None) -> Model:
-        return LitellmModel(
-            model=model_name or settings.LLM_MODEL,
-            base_url=settings.LLM_BASE_URL or None,
-            api_key=settings.LLM_API_KEY or None,
-        )
-
-
 async def _sse_result_generator(result, session_id: str | None = None):
-    """Convert a non-streaming Runner.run result into a single-chunk SSE stream.
-
-    The OpenAI Agents SDK + LitellmModel streaming path is currently broken
-    (openai/openai-agents-python#601), so we run the agent to completion and
-    emit the final output as one SSE event followed by [DONE].
-    """
+    """Emit a completed Runner.run result as SSE (used by non-chat endpoints)."""
     if session_id:
         yield f"event: session\ndata: {session_id}\n\n"
     last_agent_name = getattr(getattr(result, "last_agent", None), "name", None)
     if last_agent_name:
         yield f"event: handoff\ndata: {last_agent_name}\n\n"
-    text = result.final_output if isinstance(result.final_output, str) else str(result.final_output)
-    if text:
-        yield f"data: {text}\n\n"
+    final = result.final_output
+    if hasattr(final, "model_dump_json"):
+        yield f"event: structured\ndata: {final.model_dump_json()}\n\n"
+    else:
+        text = final if isinstance(final, str) else str(final)
+        if text:
+            yield f"data: {text}\n\n"
     yield "data: [DONE]\n\n"
+
+
+async def _sse_streamed_generator(
+    streamed_result,
+    session_id: str,
+    quota_remaining: int,
+):
+    """Consume a RunResultStreaming and emit SSE events.
+
+    Emits session + quota immediately, then drains stream_events() to
+    capture handoff names, then emits the structured final output.
+    """
+    yield f"event: session\ndata: {session_id}\n\n"
+    yield f"event: quota\ndata: {quota_remaining}\n\n"
+
+    handoff_name: str | None = None
+
+    async for event in streamed_result.stream_events():
+        if event.type == "agent_updated_stream_event":
+            new_name = getattr(getattr(event, "new_agent", None), "name", None)
+            if new_name:
+                handoff_name = new_name
+        # RawResponsesStreamEvent tokens are JSON fragments when output_type is set;
+        # skip them — emit full structured output after stream completes.
+
+    agent_name = getattr(getattr(streamed_result, "last_agent", None), "name", handoff_name)
+    emit_name = handoff_name or agent_name
+    if emit_name:
+        yield f"event: handoff\ndata: {emit_name}\n\n"
+
+    final = streamed_result.final_output
+    if final is not None and hasattr(final, "model_dump_json"):
+        yield f"event: structured\ndata: {final.model_dump_json()}\n\n"
+    elif final is not None:
+        text = final if isinstance(final, str) else str(final)
+        if text:
+            yield f"data: {text}\n\n"
+
+    yield "data: [DONE]\n\n"
+
+
+OFF_TOPIC_CANNED = (
+    "I'm here to help with Python learning! "
+    "Try asking about Python syntax, debugging, or coding exercises."
+)
+
+SSE_HEADERS = {
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+}
+
+
+def _word_boundary_trim(text: str, max_len: int = 60) -> str:
+    if len(text) <= max_len:
+        return text
+    trimmed = text[:max_len]
+    space_idx = trimmed.rfind(" ")
+    return trimmed[:space_idx] if space_idx > 0 else trimmed
 
 
 @router.post(
@@ -107,6 +159,7 @@ async def _sse_result_generator(result, session_id: str | None = None):
         },
         401: {"model": AgentErrorResponse, "description": "Unauthorized"},
         404: {"model": AgentErrorResponse, "description": "Session not found"},
+        429: {"description": "Daily chat quota exhausted"},
         502: {"model": AgentErrorResponse, "description": "LLM provider error"},
     },
 )
@@ -116,31 +169,28 @@ async def agent_chat(
     routing_repo: RoutingRepository = Depends(get_routing_repository),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    code_session_service: CodeSessionService = Depends(get_code_session_service),
+    quota_service: ChatQuotaService = Depends(get_chat_quota_service),
 ):
     """Chat with the agent system. Routes the question to the appropriate specialist."""
     logger.info("Agent chat request from user=%s", current_user.id)
 
-    # Rate limit code reviews (requests that include code_snippet)
-    if request.code_snippet:
-        from datetime import date, datetime, timedelta, timezone
-        allowed = await code_session_service.check_and_increment_daily_limit(
-            db, current_user.id, "review", limit=5
+    # Enforce daily chat quota
+    from datetime import date, datetime, timedelta, timezone as tz
+    allowed, remaining = await quota_service.check_and_get_remaining(db, current_user.id)
+    if not allowed:
+        retry_after = (datetime.now(tz.utc).date() + timedelta(days=1)).isoformat()
+        return JSONResponse(
+            status_code=429,
+            content=RateLimitErrorResponse(
+                message="Daily chat quota exhausted (5 messages/day). Try again tomorrow.",
+                retry_after=retry_after,
+            ).model_dump(),
         )
-        if not allowed:
-            retry_after = (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
-            from fastapi.responses import JSONResponse
-            return JSONResponse(
-                status_code=429,
-                content=RateLimitErrorResponse(
-                    message="Daily review limit reached (5 reviews/day). Try again tomorrow.",
-                    retry_after=retry_after,
-                ).model_dump(),
-            )
 
     triage_result = classify_intent(request.message)
     agent_name = get_agent_for_intent(triage_result.intent)
 
+    # Resolve or create session
     if request.session_id:
         session_obj = await session_repo.get_session(request.session_id)
         if not session_obj:
@@ -152,9 +202,18 @@ async def agent_chat(
         session_obj = await session_repo.create_session(user_id=current_user.id)
         session_id = session_obj.id
 
-    await session_repo.add_message_to_history(str(session_id), "user", request.message)
-    await session_repo.update_session(str(session_id), active_agent=agent_name)
+    # Set session title on first message
+    if not session_obj.title:
+        title = _word_boundary_trim(request.message)
+        await session_repo.update_session(
+            str(session_id), title=title, surface=request.surface, active_agent=agent_name
+        )
+    else:
+        await session_repo.update_session(str(session_id), active_agent=agent_name)
 
+    await session_repo.add_message_to_history(str(session_id), "user", request.message)
+
+    # Build context and run agent
     lf_ctx = LearnFlowContext(
         user_id=current_user.id,
         session_id=session_id,
@@ -177,10 +236,9 @@ async def agent_chat(
         routing_repo=routing_repo,
         user_message=request.message,
     )
+    run_config = get_run_config()
 
-    run_config = RunConfig(model_provider=_ConfiguredLitellmProvider())
-
-    result = await Runner.run(
+    streamed = Runner.run_streamed(
         selected_agent,
         input=request.message,
         context=lf_ctx,
@@ -188,20 +246,65 @@ async def agent_chat(
         run_config=run_config,
     )
 
-    if result.final_output:
-        await session_repo.add_message_to_history(
-            str(session_id), "assistant", str(result.final_output)
-        )
+    async def _generate():
+        try:
+            async for chunk in _sse_streamed_generator(streamed, str(session_id), remaining):
+                yield chunk
+            # Persist AI response after streaming completes
+            final = streamed.final_output
+            if final is not None:
+                content = final.model_dump_json() if hasattr(final, "model_dump_json") else str(final)
+                await session_repo.add_message_to_history(str(session_id), "assistant", content)
+        except InputGuardrailTripwireTriggered:
+            # session + quota SSE already emitted by _sse_streamed_generator before exception
+            await session_repo.add_message_to_history(str(session_id), "assistant", OFF_TOPIC_CANNED)
+            yield "event: handoff\ndata: none\n\n"
+            yield f"data: {OFF_TOPIC_CANNED}\n\n"
+            yield "data: [DONE]\n\n"
 
-    return StreamingResponse(
-        _sse_result_generator(result, session_id=str(session_id)),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
-    )
+    return StreamingResponse(_generate(), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+@router.get(
+    "/sessions",
+    summary="List chat sessions for current user",
+    response_model=list[ChatSessionListItem],
+    responses={401: {"model": AgentErrorResponse}},
+)
+async def list_sessions(
+    limit: int = Query(default=20, ge=1, le=50),
+    session_repo: AgentSessionRepository = Depends(get_agent_session_repository),
+    current_user: User = Depends(get_current_user),
+):
+    """Return the most recent chat sessions for the authenticated user."""
+    sessions = await session_repo.list_sessions(current_user.id, limit=limit)
+    return [
+        ChatSessionListItem(
+            id=str(s.id),
+            title=s.title or "(Untitled)",
+            surface=s.surface,
+            message_count=len(s.conversation_history or []),
+            last_message_at=s.updated_at,
+            created_at=s.created_at,
+        )
+        for s in sessions
+    ]
+
+
+@router.get(
+    "/quota",
+    summary="Get daily chat quota status",
+    response_model=ChatQuotaStatus,
+    responses={401: {"model": AgentErrorResponse}},
+)
+async def get_quota(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    quota_service: ChatQuotaService = Depends(get_chat_quota_service),
+):
+    """Return the current user's daily chat quota status (read-only, no side effects)."""
+    status = await quota_service.get_status(db, current_user.id)
+    return ChatQuotaStatus(**status)
 
 
 @router.get(
@@ -220,36 +323,32 @@ async def agent_chat(
 async def get_session(
     session_id: str,
     session_repo: AgentSessionRepository = Depends(get_agent_session_repository),
-    routing_repo: RoutingRepository = Depends(get_routing_repository),
     current_user: User = Depends(get_current_user),
 ):
     """Get details for an agent session including conversation history."""
+    from src.schemas.agents import ConversationMessage as ConvMsg
     session_obj = await session_repo.get_session(session_id)
     if not session_obj:
         raise HTTPException(status_code=404, detail="Session not found")
     if str(session_obj.user_id) != str(current_user.id):
         raise HTTPException(status_code=403, detail="Not your session")
 
-    routing_decisions = await routing_repo.get_session_routing_decisions(uuid.UUID(session_id))
-
-    return {
-        "id": str(session_obj.id),
-        "status": session_obj.status,
-        "active_agent": session_obj.active_agent,
-        "conversation_history": session_obj.conversation_history,
-        "routing_decisions": [
-            {
-                "intent": rd.intent,
-                "confidence": rd.confidence,
-                "target_agent": rd.target_agent,
-                "message": rd.message,
-                "created_at": rd.created_at,
-            }
-            for rd in routing_decisions
+    history = session_obj.conversation_history or []
+    return ChatSessionDetail(
+        id=str(session_obj.id),
+        title=session_obj.title or "(Untitled)",
+        surface=session_obj.surface,
+        conversation_history=[
+            ConvMsg(
+                role=m.get("role", "user"),
+                content=m.get("content", ""),
+                timestamp=m.get("timestamp", ""),
+            )
+            for m in history
         ],
-        "created_at": session_obj.created_at,
-        "updated_at": session_obj.updated_at,
-    }
+        created_at=session_obj.created_at,
+        updated_at=session_obj.updated_at,
+    )
 
 
 @router.post(
@@ -278,7 +377,7 @@ async def generate_exercise(
         exercise_agent,
         input=f"Generate a {request.difficulty}-level Python exercise on '{request.topic}'.",
         context=lf_ctx,
-        run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
+        run_config=get_run_config(),
     )
 
     return {
@@ -502,7 +601,7 @@ async def concepts_explain(
             agent,
             input=request.question,
             context=lf_ctx,
-            run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
+            run_config=get_run_config(),
         )
     except Exception as exc:
         logger.exception("Concepts agent error: %s", exc)
@@ -564,7 +663,7 @@ async def code_review_analyze(
             agent,
             input=user_message,
             context=lf_ctx,
-            run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
+            run_config=get_run_config(),
         )
     except Exception as exc:
         logger.exception("Code review agent error: %s", exc)
@@ -629,7 +728,7 @@ async def debug_analyze(
             agent,
             input=user_message,
             context=lf_ctx,
-            run_config=RunConfig(model_provider=_ConfiguredLitellmProvider()),
+            run_config=get_run_config(),
         )
     except Exception as exc:
         logger.exception("Debug agent error: %s", exc)

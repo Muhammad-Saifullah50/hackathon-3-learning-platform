@@ -318,10 +318,12 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon PostgreSQL — shared DB; Better Auth adds 4 new tables (013-frontend-foundation)
 - Python 3.11+ (backend), TypeScript 5+ / React 19 (frontend) (014-interactive-code-editor)
 - Neon PostgreSQL (new `code_sessions` table), browser localStorage (auto-save fallback) (014-interactive-code-editor)
+- Python 3.11+ (backend), TypeScript 5+ / React 19 (frontend) + openai-agents>=0.13, react-markdown, react-syntax-highlighter (015-ai-tutor-chat)
+- Neon PostgreSQL — existing `agent_sessions` + two new columns (`title`, `surface`), `rate_limit_counters` reused for 5 msg/day chat quota (015-ai-tutor-chat)
 
 ## Recent Changes
 
-Features **001 through 007 are complete**. Backend now exposes auth, profile, code execution, LLM, and full agent endpoints; all migrations applied to Neon.
+Features **001 through 007 are complete**, **013 (Student Dashboard) and 014 (Interactive Code Editor) are complete**. **015 (AI Tutor Chat) is IN PROGRESS** — Phase 1 (Setup) and Phase 2 (Foundational) are complete; Phase 3 (US1 backend + frontend hooks/components) is ~75% done. Backend now exposes auth, profile, code execution, LLM, and full agent endpoints; all migrations applied to Neon. Frontend foundation and code editor are live.
 
 - 001-auth: Python 3.11+ (backend), TypeScript/Next.js 14+ (frontend) + FastAPI, Better Auth, PyJWT, bcrypt, httpx (HaveIBeenPwned API), SQLAlchemy, Alembic.
 - 002-database-schema: 7 Alembic migrations, 12 SQLAlchemy models (User, UserProfile, UserStreak, Module, Lesson, Exercise, Quiz, UserExerciseProgress, UserQuizAttempt, UserModuleMastery, CodeSubmission, LLMCache), 5 repository classes with async operations, Pydantic validation, and 8 seeded Python curriculum modules.
@@ -329,7 +331,36 @@ Features **001 through 007 are complete**. Backend now exposes auth, profile, co
 - 004-user-management: Profile, preferences, and admin user-management endpoints on top of F01/F02.
 - 005-python-code-sandbox: Docker-based isolated execution sandbox with 5s timeout, 50MB memory, no network, stdlib-only imports, AST-validated.
 - 006-llm-provider: `LlmClient` + `LlmService` with LiteLLM backend, prompt caching in `llm_cache`, prompt templates in `src/llm/prompts.py`.
-- 007-agent-layer (T071 validated 2026-05-09): All 6 chat scenarios route correctly through TriageAgent → specialist agents (concepts/debug/code_review/exercise/progress) against live Gemini. Routing decisions persisted to DB. Drive-by fixes landed during validation:
-  - Added `_ConfiguredLitellmProvider` in [src/api/v1/agents.py](backend/src/api/v1/agents.py) so the OpenAI Agents SDK actually uses `LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL` settings (previously instantiated `LitellmProvider()` with no args and fell back to OpenAI/`gpt-4.1`).
-  - Chat endpoint switched from `Runner.run_streamed` to `Runner.run` due to known upstream SDK bug [openai/openai-agents-python#601](https://github.com/openai/openai-agents-python/issues/601) — streaming with `LitellmModel` raises a Pydantic `ResponseCreatedEvent.sequence_number` validation error mid-stream. Output is wrapped in a single SSE chunk + handoff event.
-  - `user.role.value` → `user.role` at 3 call sites in [src/auth/service.py](backend/src/auth/service.py) (column is `String`, not Enum) so `/api/auth/login` no longer 500s.
+- 007-agent-layer (T071 validated 2026-05-09): All 6 chat scenarios route correctly through TriageAgent → specialist agents (concepts/debug/code_review/exercise/progress) against live Gemini. Routing decisions persisted to DB.
+- 013-frontend-foundation: Next.js 14+ app with Better Auth, Tailwind CSS, React Query; student dashboard with module progress cards, mastery indicators, streak counter, and quick actions.
+- 014-interactive-code-editor: Monaco editor with Python syntax highlighting, sandbox execution via `/api/code/execute`, stdout/stderr/timing output, error highlighting, auto-save to `code_sessions` table, and collapsible `TutorPanel` integration point.
+- 015-ai-tutor-chat (IN PROGRESS — 2026-05-11): Tasks completed so far:
+  - **T001** ✅ openai-agents v0.0.14 confirmed (has `Runner.run_streamed`); pyproject.toml already at `>=0.0.13`
+  - **T002** ✅ `react-markdown`, `react-syntax-highlighter`, `@types/react-syntax-highlighter` installed
+  - **T003** ✅ Alembic migration `20260511_add_chat_session_title_surface.py` created (pending `alembic upgrade head`)
+  - **T004** ✅ `AgentSession` model updated with `title TEXT` + `surface VARCHAR(20)` columns + `CheckConstraint`
+  - **T005** ✅ `ChatSessionListItem`, `ChatSessionDetail`, `ChatQuotaStatus` schemas added to `src/schemas/agents.py`; `AgentChatRequest` extended with `execution_output` + `surface`
+  - **T005b** ✅ `src/schemas/agent_responses.py` created with `ConceptResponse`, `DebugResponse`, `ExerciseAgentResponse`, `CodeReviewResponse`, `ProgressAgentResponse`, `CodeBlock`, `IssueItem`
+  - **T006** ✅ `ChatQuotaService` created in `src/services/chat_quota_service.py` (5 msg/day via `RateLimitCounter`)
+  - **T007** ✅ `list_sessions()` + `get_session_detail()` added to `AgentSessionRepository`
+  - **T008** ✅ `get_chat_quota_service()` dependency factory registered in `src/dependencies.py`
+  - **T009** ✅ `off_topic` intent + `_is_off_topic()` added to `src/services/agents/triage.py`
+  - **T010** ✅ Typed TS fetch helpers (`sendMessage`, `listSessions`, `getSession`, `getQuota`) in `frontend/src/lib/api/chat.ts`
+  - **T010b** ✅ All 5 specialist agent factories wired with `output_type` (ConceptResponse, DebugResponse, ExerciseAgentResponse, CodeReviewResponse, ProgressAgentResponse)
+  - **T011** ✅ `POST /api/v1/agents/chat` upgraded to `Runner.run_streamed`; quota check, off_topic short-circuit, session title on first message, structured SSE output
+  - **T012** ✅ `GET /api/v1/agents/sessions` endpoint added (returns `list[ChatSessionListItem]`)
+  - **T013** ✅ `GET /api/v1/agents/sessions/{id}` returns `ChatSessionDetail`
+  - **T014** ✅ `GET /api/v1/agents/quota` returns `ChatQuotaStatus` (read-only)
+  - **T015** ✅ `useStreamChat` hook in `frontend/src/hooks/useStreamChat.ts` (SSE parsing, structured event, quota, session)
+  - **T016** ✅ `useChatSessions` + `useChatSession` hooks in `frontend/src/hooks/useChatSessions.ts`
+  - **T017** ✅ `useChatQuota` hook in `frontend/src/hooks/useChatQuota.ts`
+  - **T018** ✅ `TypingIndicator` component in `frontend/src/components/chat/TypingIndicator.tsx`
+  - **T019** ✅ `ChatMessage` component with ConceptCard, DebugCard, ExerciseCard, CodeReviewCard, ProgressCard, off-topic amber bubble
+  - **T020** ✅ `ChatInput` component with char counter, quota badge, quota-exhausted guard
+  - **T021** ✅ `ChatWindow` component with message list, streaming text, TypingIndicator
+  - **T022** 🔲 `SessionSidebar` — not yet started
+  - **T023** 🔲 Full `/chat` page — not yet started
+  - **T024-T025** 🔲 TutorPanel upgrade (US2) — not yet started
+  - **T026-T029** 🔲 Off-topic guardrail UI + exercise rendering (US3/US4) — not yet started
+  - **T030-T033** 🔲 Polish, accessibility audit, error handling — not yet started
+  - **Migration** 🔲 `alembic upgrade head` not yet run against live DB

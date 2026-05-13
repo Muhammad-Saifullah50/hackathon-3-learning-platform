@@ -9,6 +9,8 @@ from typing import Optional
 
 from agents import Agent, ModelSettings, RunContextWrapper, Runner, function_tool, handoff
 
+from src.services.agents.guardrails import off_topic_guardrail
+
 from src.llm.prompts import (
     get_code_review_agent_prompt,
     get_concept_agent_prompt,
@@ -20,6 +22,13 @@ from src.repositories.exercise_repository import ExerciseRepository
 from src.repositories.mastery_repository import MasteryRepository
 from src.repositories.progress_repository import ProgressRepository
 from src.repositories.user_repository import UserStreakRepository
+from src.schemas.agent_responses import (
+    CodeReviewResponse,
+    ConceptResponse,
+    DebugResponse,
+    ExerciseAgentResponse,
+    ProgressAgentResponse,
+)
 from src.services.agents.context import LearnFlowContext
 from src.services.agents.triage import classify_intent
 
@@ -124,6 +133,7 @@ def get_triage_agent() -> Agent[LearnFlowContext]:
             handoff(exercise),
             handoff(progress),
         ],
+        input_guardrails=[off_topic_guardrail],
         model_settings=ModelSettings(temperature=0.3),
     )
 
@@ -143,7 +153,9 @@ def get_concepts_agent() -> Agent[LearnFlowContext]:
     return Agent(
         name="concepts",
         instructions=dynamic_instructions,
-        model_settings=ModelSettings(temperature=0.7, max_tokens=600),
+        output_type=ConceptResponse,
+        input_guardrails=[off_topic_guardrail],
+        model_settings=ModelSettings(temperature=0.7),
     )
 
 
@@ -162,7 +174,9 @@ def get_debug_agent() -> Agent[LearnFlowContext]:
     return Agent(
         name="debug",
         instructions=dynamic_instructions,
-        model_settings=ModelSettings(temperature=0.5, max_tokens=400),
+        output_type=DebugResponse,
+        input_guardrails=[off_topic_guardrail],
+        model_settings=ModelSettings(temperature=0.5),
     )
 
 
@@ -176,13 +190,20 @@ def get_code_review_agent() -> Agent[LearnFlowContext]:
         code_context = ""
         if context.context.code_snippet:
             code_context = f"\n\nCode to review:\n```python\n{context.context.code_snippet}\n```"
-        return f"{base} Always start with positive reinforcement. Provide structured feedback in: correctness, style, efficiency, readability.{code_context}"
+        return (
+            f"{base} Always start with positive reinforcement. "
+            "Provide structured feedback covering correctness, PEP 8 style violations, "
+            "efficiency, and readability. Identify any style issues yourself as if you ran a linter."
+            f"{code_context}"
+        )
 
     return Agent(
         name="code_review",
         instructions=dynamic_instructions,
+        output_type=CodeReviewResponse,
         tools=[run_static_analysis],
-        model_settings=ModelSettings(temperature=0.5, max_tokens=600),
+        input_guardrails=[off_topic_guardrail],
+        model_settings=ModelSettings(temperature=0.5),
     )
 
 
@@ -196,13 +217,23 @@ def get_exercise_agent() -> Agent[LearnFlowContext]:
         topic_context = ""
         if context.context.topic:
             topic_context = f"\n\nTopic: {context.context.topic}"
-        return f"{base}{topic_context}"
+        difficulty = context.context.level or "beginner"
+        return (
+            f"{base}{topic_context}\n\n"
+            f"Generate a {difficulty}-level Python exercise. "
+            "Your JSON response MUST include: title (string), description (string), "
+            f"difficulty='{difficulty}', starter_code={{code: '...', language: 'python'}}, "
+            "expected_concepts (list), send_to_editor (null or CodeBlock). "
+            "Do NOT omit title, difficulty, or starter_code."
+        )
 
     return Agent(
         name="exercise",
         instructions=dynamic_instructions,
+        output_type=ExerciseAgentResponse,
         tools=[get_exercise],
-        model_settings=ModelSettings(temperature=0.8, max_tokens=600),
+        input_guardrails=[off_topic_guardrail],
+        model_settings=ModelSettings(temperature=0.1),
     )
 
 
@@ -213,11 +244,19 @@ def get_progress_agent() -> Agent[LearnFlowContext]:
         context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
     ) -> str:
         base = get_progress_agent_prompt()
-        return f"{base} Use an encouraging tone. When the student has no data, suggest first steps."
+        user_context = (
+            f"Student user_id: {context.context.user_id}. "
+            "Mastery formula: exercises 40%, quizzes 30%, code quality 20%, streak 10%. "
+            "Mastery levels: 0-40% Beginner, 41-70% Learning, 71-90% Proficient, 91-100% Mastered. "
+            "If no data is available, encourage the student and suggest starting with Module 1 (Basics)."
+        )
+        return f"{base} {user_context} Use an encouraging tone."
 
     return Agent(
         name="progress",
         instructions=dynamic_instructions,
+        output_type=ProgressAgentResponse,
         tools=[get_progress_summary],
-        model_settings=ModelSettings(temperature=0.7, max_tokens=400),
+        input_guardrails=[off_topic_guardrail],
+        model_settings=ModelSettings(temperature=0.7),
     )

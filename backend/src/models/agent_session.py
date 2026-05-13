@@ -34,6 +34,8 @@ class AgentSession(Base, TimestampMixin):
     )
     conversation_history = Column(JSONB, nullable=False, server_default="[]")
     active_agent = Column(String(30), nullable=True)
+    title = Column(Text, nullable=True)
+    surface = Column(String(20), nullable=True)
 
     # Relationships
     routing_decisions = relationship(
@@ -47,6 +49,10 @@ class AgentSession(Base, TimestampMixin):
         CheckConstraint(
             "status IN ('active', 'completed', 'abandoned')",
             name="check_agent_session_status",
+        ),
+        CheckConstraint(
+            "surface IN ('standalone', 'embedded') OR surface IS NULL",
+            name="check_agent_session_surface",
         ),
         Index("idx_agent_session_user_id", "user_id"),
         Index("idx_agent_session_status", "status"),

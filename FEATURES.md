@@ -1,8 +1,40 @@
-now
-
 # LearnFlow Feature Breakdown
 
 This document breaks down the LearnFlow platform into isolated, buildable features following SpecKit Plus methodology. Each feature can be developed independently with clear boundaries and dependencies.
+
+---
+
+## Core Product Philosophy: Dynamic Content Generation
+
+**All curriculum content is AI-generated on demand — there is no pre-authored lesson library.**
+
+The 8 Python modules (Basics, Control Flow, Data Structures, Functions, OOP, Files, Errors, Libraries) serve as a **navigation and progress framework only** — they define what topics exist and anchor the dashboard's progress tracking. They are not a content library.
+
+| Student Action | What Happens |
+|---------------|--------------|
+| Asks "explain for loops" | Concepts Agent generates an explanation tailored to the student's mastery level |
+| Requests practice | Exercise Agent generates a coding challenge calibrated to current mastery |
+| Takes a quiz | Exercise Agent generates quiz questions; student works through them in flashcard-style UI |
+| Completes exercise | Score feeds mastery formula (40% exercises, 30% quizzes, 20% code quality, 10% streak) |
+
+See **ADR-0001** (`history/adr/0001-ai-generated-dynamic-content-over-pre-authored-curriculum.md`) for the full rationale and tradeoffs.
+
+---
+
+## Demo Scenario
+
+This scenario demonstrates the end-to-end learning flow:
+
+1. Student **Maya** logs in → Dashboard shows: "Module 2: Loops — 60% complete"
+2. Maya asks: "How do for loops work in Python?"
+3. **Concepts Agent** generates an explanation with code examples adapted to Maya's level
+4. Maya writes a for loop in the Monaco editor, runs it successfully
+5. Agent offers a quiz → Maya gets 4/5 → Mastery updates to 68%
+6. Student **James** struggles with list comprehensions → Gets 3 wrong answers
+7. Struggle alert sent to teacher **Mr. Rodriguez**
+8. Teacher views James's code attempts, types: "Create easy exercises on list comprehensions"
+9. **Exercise Agent** generates targeted exercises → Teacher assigns with one click
+10. James receives notification → Completes exercises → Confidence restored
 
 ---
 
@@ -86,16 +118,19 @@ Implement secure authentication using Better Auth with JWT tokens, role-based ac
 **Estimated Complexity:** Medium
 
 **Description:**
-Design and implement the complete PostgreSQL schema for users, lessons, progress, exercises, quizzes, and LLM cache.
+Design and implement the complete PostgreSQL schema for users, modules (topic scaffold only), progress, AI-generated exercises/quizzes (stored after generation for history), and LLM cache.
+
+> **Note (ADR-0001):** The `Lesson` table stores topic labels and module structure only — no pre-authored content. The `Exercise` and `Quiz` tables store AI-generated content *after* it is produced at runtime, for grading history and teacher review. Content is never pre-authored.
 
 **Acceptance Criteria:**
 - [ ] Alembic migration setup
 - [ ] Users table (id, email, role, created_at)
-- [ ] Lessons table (id, module, topic, content)
-- [ ] Progress table (user_id, lesson_id, mastery_score, streak)
+- [ ] Modules table (id, name, topic_labels) — navigation scaffold only, no lesson prose
+- [ ] Progress table (user_id, module_id, mastery_score, streak)
+- [ ] Exercises table (user_id, generated_content, score, timestamp) — stores generated exercises post-creation
 - [ ] Code submissions table (user_id, code, result, timestamp)
 - [ ] LLM cache table (prompt_hash, response, created_at)
-- [ ] Indexes on user_id, lesson_id, created_at
+- [ ] Indexes on user_id, module_id, created_at
 - [ ] Foreign key constraints
 
 **Tech Stack:**
@@ -255,14 +290,14 @@ Routes student queries to appropriate specialist agents based on intent classifi
 **Estimated Complexity:** Medium
 
 **Description:**
-Explains Python concepts with examples, adapts explanations to student level.
+Generates Python concept explanations on demand, adapting to the student's mastery level and session context. All content is AI-generated at request time — no pre-authored lessons are retrieved.
 
 **Acceptance Criteria:**
-- [ ] Concept explanation with code examples
-- [ ] Difficulty adaptation (beginner/intermediate/advanced)
-- [ ] Visual aids (ASCII diagrams, tables)
-- [ ] Follow-up question suggestions
-- [ ] Streaming responses
+- [ ] Generates concept explanation with code examples on demand
+- [ ] Adapts explanation depth to student mastery level (beginner/intermediate/advanced)
+- [ ] Includes visual aids where helpful (ASCII diagrams, tables)
+- [ ] Suggests follow-up questions the student might want to explore
+- [ ] Streams response tokens progressively
 
 **Tech Stack:**
 - FastAPI
@@ -330,14 +365,15 @@ Parses error messages, identifies root causes, provides progressive hints before
 **Estimated Complexity:** High
 
 **Description:**
-Generates coding challenges and provides auto-grading with test cases.
+Generates coding challenges and quizzes on demand, calibrated to the student's current module and mastery level. Provides auto-grading and feedback. Generated content is stored in the database after creation for history and teacher review — not pre-authored.
 
 **Acceptance Criteria:**
-- [ ] Exercise generation by topic/difficulty
-- [ ] Test case generation
-- [ ] Auto-grading with feedback
-- [ ] Partial credit scoring
-- [ ] Exercise storage in database
+- [ ] Generates exercise on demand by topic and student mastery level
+- [ ] Generates test cases alongside the exercise
+- [ ] Auto-grades student submissions with feedback
+- [ ] Supports partial credit scoring
+- [ ] Stores generated exercise + student result in database post-generation
+- [ ] Generates quiz questions in flashcard format for the Quiz System (F16)
 
 **Tech Stack:**
 - FastAPI
@@ -432,27 +468,35 @@ Monaco editor integration with Python syntax highlighting, code execution, and r
 
 ### **F15: Chat Interface with AI Tutor**
 **Priority:** P2 (Student Features)
-**Dependencies:** F07, F08, F09, F10
+**Dependencies:** F07, F08, F09, F10, F14
 **Estimated Complexity:** High
 
 **Description:**
-Real-time chat interface with AI tutor agents, streaming responses, and context awareness.
+Two-surface chat interface: a standalone `/chat` page for general Python learning conversation, and a collapsible panel embedded in the code editor (F14). Every message routes through the Triage Agent (F07) which hands off to the appropriate specialist — Concepts, Debug, Exercise, Code Review, or Progress. Responses stream token-by-token. Chat history is persisted to the database. Guardrails keep conversations focused on Python learning.
 
 **Acceptance Criteria:**
-- [ ] Chat UI with message history
-- [ ] Streaming response display
-- [ ] Code block rendering
-- [ ] Agent routing (transparent to user)
-- [ ] Context persistence (lesson, code)
-- [ ] Typing indicators
+- [ ] Standalone `/chat` page — general Python assistant, no required lesson context
+- [ ] Collapsible chat panel embedded in the F14 code editor
+- [ ] Every message routed through Triage Agent → specialist agent (transparent to student)
+- [ ] Responses streamed token-by-token (backend SSE fixed as part of this feature)
+- [ ] Code blocks in responses rendered with Python syntax highlighting
+- [ ] Typing indicator while AI generates response
+- [ ] Last 5 messages sent as conversation history context
+- [ ] Embedded panel auto-attaches current code (up to 4 KB) + last execution output as context
+- [ ] Student's current module, lesson, and mastery level included as context
+- [ ] Off-topic (non-Python) messages redirected with a polite guardrail response
+- [ ] Chat history persisted to database; restored on page reload
+- [ ] 2000-character input limit with visible counter
 
 **Tech Stack:**
 - Next.js
-- Server-Sent Events (SSE)
+- Server-Sent Events (SSE) with true token streaming
 - React
 
 **Pages:**
 - `/chat`
+
+**Spec:** `specs/015-ai-tutor-chat/spec.md`
 
 ---
 
@@ -462,15 +506,16 @@ Real-time chat interface with AI tutor agents, streaming responses, and context 
 **Estimated Complexity:** Medium
 
 **Description:**
-Interactive coding quizzes with auto-grading and immediate feedback.
+Interactive quiz experience surfaced as a flashcard-style UI. Quiz questions are AI-generated on demand by the Exercise Agent (F11), calibrated to the student's current module and mastery level. Students work through cards sequentially; results feed the mastery calculation.
 
 **Acceptance Criteria:**
-- [ ] Quiz question display
-- [ ] Code input for answers
-- [ ] Auto-grading with test cases
-- [ ] Immediate feedback
-- [ ] Score tracking
-- [ ] Quiz history
+- [ ] Flashcard-style UI — one question per card, student advances through the deck
+- [ ] AI-generated quiz questions (fetched from Exercise Agent, not a pre-authored bank)
+- [ ] Code input for coding questions; multiple choice for concept questions
+- [ ] Auto-grading with immediate per-card feedback
+- [ ] Score summary at end of quiz
+- [ ] Mastery score updated based on quiz result
+- [ ] Quiz history stored (generated questions + student answers + score)
 
 **Tech Stack:**
 - Next.js

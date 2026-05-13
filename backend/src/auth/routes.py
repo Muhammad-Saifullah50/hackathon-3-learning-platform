@@ -124,6 +124,22 @@ async def refresh_token(
     return response
 
 
+@router.post("/stateless-token")
+async def create_stateless_token(
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Create a stateless access token (no session_id) for Better Auth session storage.
+
+    The returned token bypasses session revocation checks, making it suitable
+    for long-lived storage in the Better Auth session. Still RS256-signed with
+    the standard expiry (JWT_ACCESS_TOKEN_EXPIRE_MINUTES).
+    """
+    from src.auth.jwt import create_access_token
+    token = create_access_token(current_user.id, current_user.role, current_user.email)
+    return {"access_token": token, "token_type": "bearer"}
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_profile(
     current_user: User = Depends(get_current_user),

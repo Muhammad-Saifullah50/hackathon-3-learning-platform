@@ -22,6 +22,7 @@ from src.repositories.code_session_repository import CodeSessionRepository
 from src.repositories.exercise_repository import ExerciseRepository
 from src.repositories.mastery_repository import MasteryRepository
 from src.repositories.routing_repository import RoutingRepository
+from src.services.chat_quota_service import ChatQuotaService
 from src.services.code_session_service import CodeSessionService
 
 
@@ -142,3 +143,8 @@ async def get_code_session_service(
 ) -> CodeSessionService:
     """Get CodeSessionService instance."""
     return CodeSessionService(repo)
+
+
+def get_chat_quota_service() -> ChatQuotaService:
+    """Get ChatQuotaService instance."""
+    return ChatQuotaService()

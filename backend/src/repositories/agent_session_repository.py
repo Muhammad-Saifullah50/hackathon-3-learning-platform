@@ -108,6 +108,26 @@ class AgentSessionRepository:
         await self.session.refresh(session_obj)
         return session_obj
 
+    async def list_sessions(
+        self, user_id: uuid.UUID, limit: int = 20
+    ) -> list[AgentSession]:
+        """Return sessions for user ordered by updated_at descending.
+
+        Used by the session list endpoint (T012).
+        """
+        stmt = (
+            select(AgentSession)
+            .where(AgentSession.user_id == user_id)
+            .order_by(AgentSession.updated_at.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_session_detail(self, session_id: str) -> Optional[AgentSession]:
+        """Return a session with full conversation history (alias of get_session)."""
+        return await self.get_session(session_id)
+
     async def get_user_sessions(
         self, user_id: uuid.UUID, limit: int = 20, offset: int = 0
     ) -> list[AgentSession]:

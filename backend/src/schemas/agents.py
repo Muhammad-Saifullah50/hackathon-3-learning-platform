@@ -4,7 +4,7 @@ Pydantic schemas for agent request/response validation.
 """
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +15,9 @@ class AgentChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
     topic: Optional[str] = None
     session_id: Optional[str] = None
-    code_snippet: Optional[str] = None
+    code_snippet: Optional[str] = Field(None, max_length=4096)
+    execution_output: Optional[str] = Field(None, max_length=2000)
+    surface: Optional[Literal["standalone", "embedded"]] = None
 
 
 class ConversationMessage(BaseModel):
@@ -183,3 +185,34 @@ class AgentErrorResponse(BaseModel):
     error: str
     message: str
     detail: Optional[str] = None
+
+
+class ChatSessionListItem(BaseModel):
+    """Summary of a chat session for the session list."""
+
+    id: str
+    title: str
+    surface: Optional[str]
+    message_count: int
+    last_message_at: datetime
+    created_at: datetime
+
+
+class ChatSessionDetail(BaseModel):
+    """Full chat session with conversation history."""
+
+    id: str
+    title: str
+    surface: Optional[str]
+    conversation_history: list[ConversationMessage]
+    created_at: datetime
+    updated_at: datetime
+
+
+class ChatQuotaStatus(BaseModel):
+    """Daily chat quota status for the current user."""
+
+    messages_sent_today: int
+    daily_limit: int
+    remaining: int
+    quota_reset_at: datetime

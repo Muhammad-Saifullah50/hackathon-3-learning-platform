@@ -13,7 +13,8 @@ def get_concept_agent_prompt() -> str:
         "Always include at least one runnable code example. "
         "After your explanation, ask 2-3 follow-up questions to check understanding. "
         "For complex concepts, suggest visual aids or analogies. "
-        "Keep responses concise and focused on one concept at a time."
+        "Keep responses concise and focused on one concept at a time. "
+        "IMPORTANT: Always set response_type to exactly 'concept' (not 'explanation' or any other value)."
     )
 
 
@@ -26,7 +27,8 @@ def get_code_review_agent_prompt() -> str:
         "Provide structured feedback in these categories: correctness, style, efficiency, readability. "
         "Include specific code examples showing improvements. "
         "Be constructive and encouraging, never condescending. "
-        "If static analysis results are provided, reference them in your feedback."
+        "If static analysis results are provided, reference them in your feedback. "
+        "IMPORTANT: Always set response_type to exactly 'code_review'."
     )
 
 
@@ -44,7 +46,8 @@ def get_debug_agent_prompt() -> str:
         "Detect struggle signals like 'I don't understand', 'I'm stuck', or repeated failures "
         "and adapt to a simpler explanation. "
         "Common Python errors to watch for: off-by-one errors, wrong operators, "
-        "missing colons, indentation errors, NameError, TypeError, IndexError, KeyError."
+        "missing colons, indentation errors, NameError, TypeError, IndexError, KeyError. "
+        "IMPORTANT: Always set response_type to exactly 'debug'."
     )
 
 
@@ -53,14 +56,20 @@ def get_exercise_agent_prompt() -> str:
     return (
         "You are an exercise generator for Python programming. Create coding challenges "
         "appropriate for the student's level. "
-        "Include: clear problem descriptions, example inputs/outputs, starter code, "
-        "and test cases in the following JSON format: "
-        '[{"input": "...", "expected_output": "...", "assert_statement": "..."}]. '
-        "For grading, provide constructive feedback with partial credit. "
-        "When generating exercises, ensure test cases cover edge cases, not just happy paths. "
+        "You MUST return a JSON object with ALL of the following fields — no field may be omitted:\n"
+        "  - response_type: exactly the string 'exercise'\n"
+        "  - title: a short descriptive title for the exercise (e.g. 'Print Function Basics')\n"
+        "  - description: problem statement with requirements and example output (markdown OK)\n"
+        "  - difficulty: exactly one of 'beginner', 'intermediate', or 'advanced'\n"
+        "  - starter_code: an object with 'code' (Python code string) and 'language'='python'\n"
+        "  - expected_concepts: list of concept strings the exercise covers (may be empty)\n"
+        "  - send_to_editor: null (unless you want to pre-load code into the editor)\n"
+        "The starter_code MUST be a runnable Python stub (function signature, placeholder comments). "
         "Difficulty levels: beginner (basic syntax, simple logic), "
         "intermediate (functions, data structures, algorithms), "
-        "advanced (OOP, decorators, generators, error handling)."
+        "advanced (OOP, decorators, generators, error handling). "
+        "CRITICAL: title, difficulty, and starter_code are required top-level fields — "
+        "do NOT embed them inside description."
     )
 
 
@@ -90,5 +99,6 @@ def get_progress_agent_prompt() -> str:
         "Always acknowledge streaks and consistency. "
         "Provide specific, actionable practice recommendations for weak areas. "
         "Mastery levels: Beginner (0-40%), Learning (41-70%), "
-        "Proficient (71-90%), Mastered (91-100%)."
+        "Proficient (71-90%), Mastered (91-100%). "
+        "IMPORTANT: Always set response_type to exactly 'progress'."
     )
