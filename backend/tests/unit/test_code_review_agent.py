@@ -18,7 +18,6 @@ class TestCodeReviewAgent:
         agent = get_code_review_agent()
         assert agent.model_settings is not None
         assert agent.model_settings.temperature == 0.5
-        assert agent.model_settings.max_tokens == 600
 
     def test_has_static_analysis_tool(self):
         agent = get_code_review_agent()

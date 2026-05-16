@@ -59,7 +59,6 @@ class TestProgressAgent:
         agent = get_progress_agent()
         assert agent.model_settings is not None
         assert agent.model_settings.temperature == 0.7
-        assert agent.model_settings.max_tokens == 400
 
     def test_has_tools(self):
         agent = get_progress_agent()

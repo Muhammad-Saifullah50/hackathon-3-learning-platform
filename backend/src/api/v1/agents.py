@@ -86,44 +86,6 @@ async def _sse_result_generator(result, session_id: str | None = None):
     yield "data: [DONE]\n\n"
 
 
-async def _sse_streamed_generator(
-    streamed_result,
-    session_id: str,
-    quota_remaining: int,
-):
-    """Consume a RunResultStreaming and emit SSE events.
-
-    Emits session + quota immediately, then drains stream_events() to
-    capture handoff names, then emits the structured final output.
-    """
-    yield f"event: session\ndata: {session_id}\n\n"
-    yield f"event: quota\ndata: {quota_remaining}\n\n"
-
-    handoff_name: str | None = None
-
-    async for event in streamed_result.stream_events():
-        if event.type == "agent_updated_stream_event":
-            new_name = getattr(getattr(event, "new_agent", None), "name", None)
-            if new_name:
-                handoff_name = new_name
-        # RawResponsesStreamEvent tokens are JSON fragments when output_type is set;
-        # skip them — emit full structured output after stream completes.
-
-    agent_name = getattr(getattr(streamed_result, "last_agent", None), "name", handoff_name)
-    emit_name = handoff_name or agent_name
-    if emit_name:
-        yield f"event: handoff\ndata: {emit_name}\n\n"
-
-    final = streamed_result.final_output
-    if final is not None and hasattr(final, "model_dump_json"):
-        yield f"event: structured\ndata: {final.model_dump_json()}\n\n"
-    elif final is not None:
-        text = final if isinstance(final, str) else str(final)
-        if text:
-            yield f"data: {text}\n\n"
-
-    yield "data: [DONE]\n\n"
-
 
 OFF_TOPIC_CANNED = (
     "I'm here to help with Python learning! "
@@ -247,20 +209,50 @@ async def agent_chat(
     )
 
     async def _generate():
+        # Emit session id and quota immediately so the client can track state.
+        yield f"event: session\ndata: {session_id}\n\n"
+        yield f"event: quota\ndata: {remaining}\n\n"
+
+        handoff_name: str | None = None
         try:
-            async for chunk in _sse_streamed_generator(streamed, str(session_id), remaining):
-                yield chunk
-            # Persist AI response after streaming completes
-            final = streamed.final_output
-            if final is not None:
-                content = final.model_dump_json() if hasattr(final, "model_dump_json") else str(final)
-                await session_repo.add_message_to_history(str(session_id), "assistant", content)
+            async for event in streamed.stream_events():
+                if event.type == "agent_updated_stream_event":
+                    new_name = getattr(getattr(event, "new_agent", None), "name", None)
+                    if new_name:
+                        handoff_name = new_name
         except InputGuardrailTripwireTriggered:
-            # session + quota SSE already emitted by _sse_streamed_generator before exception
-            await session_repo.add_message_to_history(str(session_id), "assistant", OFF_TOPIC_CANNED)
+            # Persist the canned reply BEFORE yielding [DONE] so the DB write
+            # completes while the connection is still active.
+            await session_repo.add_message_to_history(
+                str(session_id), "assistant", OFF_TOPIC_CANNED, agent_type="none"
+            )
             yield "event: handoff\ndata: none\n\n"
             yield f"data: {OFF_TOPIC_CANNED}\n\n"
             yield "data: [DONE]\n\n"
+            return
+
+        emit_name = handoff_name or getattr(
+            getattr(streamed, "last_agent", None), "name", None
+        )
+        if emit_name:
+            yield f"event: handoff\ndata: {emit_name}\n\n"
+
+        final = streamed.final_output
+        if final is not None:
+            content = (
+                final.model_dump_json() if hasattr(final, "model_dump_json") else str(final)
+            )
+            # Persist BEFORE yielding [DONE] so the DB write completes while
+            # the SSE connection is still open (avoids dropped writes on disconnect).
+            await session_repo.add_message_to_history(
+                str(session_id), "assistant", content, agent_type=emit_name
+            )
+            if hasattr(final, "model_dump_json"):
+                yield f"event: structured\ndata: {content}\n\n"
+            else:
+                yield f"data: {content}\n\n"
+
+        yield "data: [DONE]\n\n"
 
     return StreamingResponse(_generate(), media_type="text/event-stream", headers=SSE_HEADERS)
 
@@ -343,6 +335,7 @@ async def get_session(
                 role=m.get("role", "user"),
                 content=m.get("content", ""),
                 timestamp=m.get("timestamp", ""),
+                agent_type=m.get("agent_type"),
             )
             for m in history
         ],

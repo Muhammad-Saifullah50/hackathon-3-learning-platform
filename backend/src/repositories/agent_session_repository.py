@@ -77,7 +77,7 @@ class AgentSessionRepository:
         return session_obj
 
     async def add_message_to_history(
-        self, session_id: str, role: str, content: str
+        self, session_id: str, role: str, content: str, agent_type: str | None = None
     ) -> Optional[AgentSession]:
         """
         Add a message to the session conversation history.
@@ -86,6 +86,7 @@ class AgentSessionRepository:
             session_id: UUID string of the session
             role: Message role ('user' or 'assistant')
             content: Message content
+            agent_type: Optional agent name (e.g. 'concepts', 'debug') for assistant messages
 
         Returns:
             Updated AgentSession if found, None otherwise
@@ -94,14 +95,17 @@ class AgentSessionRepository:
         if not session_obj:
             return None
 
-        history = session_obj.conversation_history or []
-        history.append(
-            {
-                "role": role,
-                "content": content,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-        )
+        # Build a new list (not in-place mutation) so SQLAlchemy detects the change
+        # on the JSONB column and includes it in the UPDATE statement.
+        history = list(session_obj.conversation_history or [])
+        entry: dict = {
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        if agent_type is not None:
+            entry["agent_type"] = agent_type
+        history.append(entry)
         session_obj.conversation_history = history
 
         await self.session.commit()

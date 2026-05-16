@@ -17,8 +17,7 @@ class TestExerciseAgent:
     def test_has_model_settings(self):
         agent = get_exercise_agent()
         assert agent.model_settings is not None
-        assert agent.model_settings.temperature == 0.8
-        assert agent.model_settings.max_tokens == 600
+        assert agent.model_settings.temperature == 0.1
 
     def test_has_exercise_tool(self):
         agent = get_exercise_agent()

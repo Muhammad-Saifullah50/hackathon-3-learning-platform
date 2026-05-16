@@ -26,6 +26,7 @@ class ConversationMessage(BaseModel):
     role: str
     content: str
     timestamp: datetime
+    agent_type: Optional[str] = None
 
 
 class RoutingDecisionRecord(BaseModel):

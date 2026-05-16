@@ -79,13 +79,9 @@ class LearnFlowHooks(RunHooks):
         agent: Agent[LearnFlowContext],
         output: Any,
     ) -> None:
-        """Save the final agent response to conversation history."""
-        lf_ctx = context.context
-        if lf_ctx.session_id and lf_ctx.db:
-            try:
-                response_text = str(output) if output else ""
-                await self.session_repo.add_message_to_history(
-                    str(lf_ctx.session_id), "assistant", response_text
-                )
-            except Exception:
-                logger.exception("Failed to save conversation history")
+        """Called when the agent produces its final output.
+
+        Persistence is handled by the streaming endpoint (_generate) which saves
+        the JSON-serialised response immediately before yielding [DONE], ensuring
+        the DB write completes while the SSE connection is still open.
+        """

@@ -174,7 +174,7 @@ def classify_intent(message: str) -> TriageResult:
             best_confidence = confidence
             best_matched = matched
 
-    if best_confidence < 0.08:
+    if best_confidence < 0.07:
         return TriageResult(intent="general", confidence=0.0)
 
     return TriageResult(

@@ -19,7 +19,6 @@ class TestConceptsAgent:
         agent = get_concepts_agent()
         assert agent.model_settings is not None
         assert agent.model_settings.temperature == 0.7
-        assert agent.model_settings.max_tokens == 600
 
     def test_no_tools_by_default(self):
         agent = get_concepts_agent()

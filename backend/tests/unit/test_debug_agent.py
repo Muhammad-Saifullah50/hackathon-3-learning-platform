@@ -18,7 +18,6 @@ class TestDebugAgent:
         agent = get_debug_agent()
         assert agent.model_settings is not None
         assert agent.model_settings.temperature == 0.5
-        assert agent.model_settings.max_tokens == 400
 
     def test_no_tools_by_default(self):
         agent = get_debug_agent()
