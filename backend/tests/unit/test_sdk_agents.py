@@ -95,3 +95,66 @@ class TestSDKAgentDefinitions:
         ]
         for agent in agents:
             assert agent.model_settings is not None
+
+
+class TestTriageAgentGuardrails:
+    """Tests for the triage agent's new guardrails configuration."""
+
+    def test_triage_agent_has_input_guardrails(self):
+        """Triage agent must have input guardrails for off-topic detection."""
+        agent = get_triage_agent()
+        assert agent.input_guardrails is not None
+        assert len(agent.input_guardrails) >= 1
+
+    def test_triage_agent_guardrail_is_off_topic(self):
+        """The triage guardrail must be the off_topic_guardrail."""
+        from src.services.agents.guardrails import off_topic_guardrail
+        agent = get_triage_agent()
+        assert off_topic_guardrail in agent.input_guardrails
+
+    def test_all_specialist_agents_have_guardrails(self):
+        """All specialist agents should have the off-topic guardrail."""
+        from src.services.agents.guardrails import off_topic_guardrail
+        agents = [
+            get_concepts_agent(),
+            get_debug_agent(),
+            get_code_review_agent(),
+            get_exercise_agent(),
+            get_progress_agent(),
+        ]
+        for agent in agents:
+            assert agent.input_guardrails is not None, (
+                f"{agent.name} is missing input_guardrails"
+            )
+            assert off_topic_guardrail in agent.input_guardrails, (
+                f"{agent.name} is missing off_topic_guardrail"
+            )
+
+    def test_all_specialist_agents_have_output_type(self):
+        """All specialist agents should have a structured output_type."""
+        from src.schemas.agent_responses import (
+            CodeReviewResponse,
+            ConceptResponse,
+            DebugResponse,
+            ExerciseAgentResponse,
+            ProgressAgentResponse,
+        )
+        expected_output_types = {
+            "concepts": ConceptResponse,
+            "debug": DebugResponse,
+            "code_review": CodeReviewResponse,
+            "exercise": ExerciseAgentResponse,
+            "progress": ProgressAgentResponse,
+        }
+        agents = [
+            get_concepts_agent(),
+            get_debug_agent(),
+            get_code_review_agent(),
+            get_exercise_agent(),
+            get_progress_agent(),
+        ]
+        for agent in agents:
+            expected = expected_output_types.get(agent.name)
+            assert agent.output_type is expected, (
+                f"{agent.name}: expected output_type={expected}, got {agent.output_type}"
+            )
