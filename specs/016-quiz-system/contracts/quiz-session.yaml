@@ -4,6 +4,9 @@ info:
   description: Get the full current state of a quiz session (for resume flow).
   version: "1.0.0"
 
+security:
+  - bearerAuth: []
+
 paths:
   /api/v1/quiz/{session_id}:
     get:
