@@ -44,6 +44,15 @@ PYTHON_ANCHOR_PATTERNS: list[str] = [
 ]
 
 INTENT_PATTERNS: dict[str, list[str]] = {
+    "quiz-generation": [
+        r"\bgive\s+me\s+a\s+quiz\b",
+        r"\bstart\s+(a\s+)?quiz\b",
+        r"\btest\s+my\s+knowledge\b",
+        r"\bquick\s+quiz\b",
+        r"\bgive\s+me\s+flashcard(s)?\b",
+        r"\bstart\s+flashcard(s)?\b",
+        r"\bquiz\s+(me\s+on|on)\b",
+    ],
     "concept-explanation": [
         r"\bwhat\s+is\b",
         r"\bexplain\b",
@@ -112,6 +121,7 @@ INTENT_PATTERNS: dict[str, list[str]] = {
 }
 
 INTENT_TO_AGENT: dict[str, str] = {
+    "quiz-generation": "quiz",
     "concept-explanation": "concepts",
     "code-debug": "debug",
     "code-review": "code_review",

@@ -28,6 +28,7 @@ from src.schemas.agent_responses import (
     DebugResponse,
     ExerciseAgentResponse,
     ProgressAgentResponse,
+    QuizResponse,
 )
 from src.services.agents.context import LearnFlowContext
 from src.services.agents.triage import classify_intent
@@ -234,6 +235,40 @@ def get_exercise_agent() -> Agent[LearnFlowContext]:
         tools=[get_exercise],
         input_guardrails=[off_topic_guardrail],
         model_settings=ModelSettings(temperature=0.1),
+    )
+
+
+def get_quiz_agent() -> Agent[LearnFlowContext]:
+    """Quiz agent that generates a 6-card quiz (3 MCQ + 3 flashcard) on a Python topic."""
+
+    def dynamic_instructions(
+        context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
+    ) -> str:
+        topic_hint = f" Focus on the topic: {context.context.topic}." if context.context.topic else ""
+        return (
+            "You are a Python quiz generator. Generate a quiz with exactly 3 multiple-choice "
+            "questions followed by exactly 3 flashcard questions.\n\n"
+            "Rules:\n"
+            "- module_slug MUST be one of: basics, control_flow, data_structures, functions, "
+            "oop, files, errors, libraries\n"
+            "- topic_label is a short human-readable label (e.g. 'For Loops')\n"
+            "- Each MCQ has exactly 4 options and a correct_index (0-3)\n"
+            "- Each flashcard has a term and a definition\n"
+            "- mcq_questions must have exactly 3 items\n"
+            "- flashcard_questions must have exactly 3 items\n"
+            "- quiz_session_id must be null (set server-side)\n"
+            "- IMPORTANT: Any Python code, expressions, or identifiers in question text or "
+            "options MUST be wrapped in backticks (e.g. `if x > 3: print('Yes')`, `list.append()`, "
+            "`True`). Multi-line code snippets must use fenced code blocks (```python ... ```).\n"
+            f"{topic_hint}"
+        )
+
+    return Agent(
+        name="quiz",
+        instructions=dynamic_instructions,
+        output_type=QuizResponse,
+        input_guardrails=[off_topic_guardrail],
+        model_settings=ModelSettings(temperature=0.5),
     )
 
 

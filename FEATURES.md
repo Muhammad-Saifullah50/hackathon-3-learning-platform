@@ -611,7 +611,7 @@ Real-time alerts to teachers when students struggle, with context and interventi
 
 **Acceptance Criteria:**
 - [ ] Struggle detection triggers (3+ same errors, 10min stuck, quiz < 50%, 5+ failed executions)
-- [ ] Alert notification (in-app + email)
+- [ ] Alert notification (in-app)
 - [ ] Student context (code attempts, error patterns)
 - [ ] Intervention suggestions
 - [ ] Alert history
@@ -673,58 +673,6 @@ WebSocket-based real-time notifications for struggle alerts, quiz completions, a
 - FastAPI WebSockets
 - Next.js
 - Redis (pub/sub)
-
----
-
-### **F23: Curriculum Management**
-**Priority:** P4 (Advanced)
-**Dependencies:** F02
-**Estimated Complexity:** High
-
-**Description:**
-Admin interface to manage curriculum structure, lessons, and content.
-
-**Acceptance Criteria:**
-- [ ] Module CRUD
-- [ ] Lesson CRUD
-- [ ] Content editor (Markdown)
-- [ ] Reordering
-- [ ] Publishing workflow
-
-**Tech Stack:**
-- Next.js
-- FastAPI
-- PostgreSQL
-
-**Pages:**
-- `/admin/curriculum`
-
----
-
-### **F24: Admin Panel**
-**Priority:** P4 (Advanced)
-**Dependencies:** F01, F04
-**Estimated Complexity:** Medium
-
-**Description:**
-System administration panel for user management, system health, and configuration.
-
-**Acceptance Criteria:**
-- [ ] User management (list, edit, delete)
-- [ ] System health dashboard
-- [ ] LLM usage metrics
-- [ ] Configuration management
-- [ ] Audit logs
-
-**Tech Stack:**
-- Next.js
-- FastAPI
-- PostgreSQL
-
-**Pages:**
-- `/admin/dashboard`
-- `/admin/users`
-- `/admin/system`
 
 ---
 

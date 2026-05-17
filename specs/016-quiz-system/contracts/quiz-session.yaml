@@ -1,0 +1,180 @@
+openapi: "3.1.0"
+info:
+  title: Quiz Session State
+  description: Get the full current state of a quiz session (for resume flow).
+  version: "1.0.0"
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/quiz/{session_id}:
+    get:
+      operationId: getQuizSession
+      summary: Get quiz session state
+      description: |
+        Returns the full current state of a quiz session including all questions,
+        student answers, grades, and status. Used by the frontend to reconstruct
+        the quiz UI when a student returns to a chat with an in-progress quiz.
+
+        Requires JWT authentication. Returns HTTP 403 if the authenticated user
+        does not own the session. Teacher-role users may read any student's session.
+      tags: [quiz]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Quiz session UUID
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Quiz session state returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuizSessionState"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MCQQuestion:
+      type: object
+      required: [type, question, options, correct_index]
+      properties:
+        type:
+          type: string
+          enum: [mcq]
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 4
+          maxItems: 4
+        correct_index:
+          type: integer
+          minimum: 0
+          maximum: 3
+
+    FlashcardQuestion:
+      type: object
+      required: [type, term, definition]
+      properties:
+        type:
+          type: string
+          enum: [flashcard]
+        term:
+          type: string
+        definition:
+          type: string
+
+    QuizQuestion:
+      oneOf:
+        - $ref: "#/components/schemas/MCQQuestion"
+        - $ref: "#/components/schemas/FlashcardQuestion"
+      discriminator:
+        propertyName: type
+
+    QuizSessionState:
+      type: object
+      required: [id, student_id, chat_session_id, module_slug, topic_label, status, questions, student_answers, grades, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        student_id:
+          type: string
+          format: uuid
+        chat_session_id:
+          type: string
+          format: uuid
+        module_slug:
+          type: string
+          enum: [basics, control_flow, data_structures, functions, oop, files, errors, libraries]
+        topic_label:
+          type: string
+        status:
+          type: string
+          enum: [generated, in_progress, completed]
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestion"
+          minItems: 6
+          maxItems: 6
+        student_answers:
+          type: object
+          description: "Keyed by card index (0-5). MCQ: integer (selected option). Flashcard: string. Null if not yet answered."
+          additionalProperties:
+            oneOf:
+              - type: integer
+              - type: string
+              - type: "null"
+        grades:
+          type: object
+          description: "Keyed by card index (0-5). MCQ: 'correct'|'wrong'. Flashcard: 'Correct'|'Partial'|'Wrong'. Null if not yet graded."
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: "null"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+    Forbidden:
+      description: User does not own this quiz session
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+    NotFound:
+      description: Quiz session not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string

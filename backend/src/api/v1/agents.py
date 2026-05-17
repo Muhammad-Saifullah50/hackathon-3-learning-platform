@@ -8,6 +8,8 @@ import logging
 import uuid
 
 from agents import InputGuardrailTripwireTriggered, RunConfig, Runner
+from src.repositories.quiz_session_repository import QuizSessionRepository
+from src.schemas.agent_responses import QuizResponse as QuizResponseSchema
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
@@ -57,6 +59,7 @@ from src.services.agents.agents import (
     get_debug_agent,
     get_exercise_agent,
     get_progress_agent,
+    get_quiz_agent,
     get_triage_agent,
 )
 from src.services.agents.exercise import ExerciseService
@@ -196,6 +199,7 @@ async def agent_chat(
         "debug": get_debug_agent,
         "exercise": get_exercise_agent,
         "progress": get_progress_agent,
+        "quiz": get_quiz_agent,
     }
     selected_agent = _agent_factory_map.get(agent_name, get_triage_agent)()
     hooks = LearnFlowHooks(
@@ -244,6 +248,29 @@ async def agent_chat(
 
         final = streamed.final_output
         if final is not None:
+            # If the quiz agent returned a QuizResponse, create a quiz_sessions row
+            # and embed the quiz_session_id before emitting to the client.
+            if isinstance(final, QuizResponseSchema):
+                try:
+                    quiz_repo = QuizSessionRepository(db)
+                    questions = (
+                        [q.model_dump() for q in final.mcq_questions]
+                        + [q.model_dump() for q in final.flashcard_questions]
+                    )
+                    quiz_session = await quiz_repo.create(
+                        student_id=current_user.id,
+                        chat_session_id=session_id,
+                        module_slug=final.module_slug,
+                        topic_label=final.topic_label,
+                        questions=questions,
+                    )
+                    final.quiz_session_id = str(quiz_session.id)
+                except Exception as exc:
+                    logger.error("Failed to create quiz session: %s", exc)
+                    yield 'event: error\ndata: {"detail": "Quiz generation failed — could not save session."}\n\n'
+                    yield "data: [DONE]\n\n"
+                    return
+
             content = (
                 final.model_dump_json() if hasattr(final, "model_dump_json") else str(final)
             )
@@ -740,6 +767,90 @@ async def debug_analyze(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get(
+    "/progress/summary",
+    summary="Get full progress summary for the dashboard",
+    responses={
+        200: {"description": "Progress summary returned successfully"},
+        401: {"model": AgentErrorResponse, "description": "Unauthorized"},
+    },
+)
+async def get_progress_summary(
+    mastery_repo: MasteryRepository = Depends(get_mastery_repository),
+    streak_repo: UserStreakRepository = Depends(get_user_streak_repository),
+    current_user: User = Depends(get_current_user),
+):
+    """Return full progress summary including mastery per topic, streak, and recommendations."""
+    mastery_records = await mastery_repo.get_user_mastery_records(current_user.id)
+
+    topics = [
+        {
+            "topic": r.topic,
+            "score": r.score,
+            "level": r.level,
+            "component_breakdown": r.component_breakdown or {},
+        }
+        for r in mastery_records
+    ]
+
+    overall_mastery = (
+        round(sum(r.score for r in mastery_records) / len(mastery_records), 2)
+        if mastery_records
+        else 0.0
+    )
+
+    weak_areas = [r.topic for r in mastery_records if r.score < 50]
+
+    streak_data = None
+    try:
+        streak = await streak_repo.get_by_user_id(current_user.id)
+        if streak:
+            streak_data = {
+                "current_streak": streak.current_streak,
+                "longest_streak": streak.longest_streak,
+            }
+    except Exception:
+        pass
+
+    recommendations: list[str] = []
+    if not mastery_records:
+        recommendations.append("Start with Python Basics to begin your learning journey!")
+    else:
+        if weak_areas:
+            recommendations.append(f"Focus on improving: {', '.join(weak_areas)}")
+        strong_areas = [r.topic for r in mastery_records if r.score >= 71]
+        if strong_areas:
+            recommendations.append(
+                f"Great work on {', '.join(strong_areas[:3])}! Consider advancing to the next topic."
+            )
+        if streak_data and streak_data["current_streak"] > 0:
+            recommendations.append(
+                f"You're on a {streak_data['current_streak']}-day streak — keep it up!"
+            )
+
+    missing_components: list[str] = []
+    if mastery_records:
+        all_components = {"exercises", "quizzes", "code_quality", "streak"}
+        seen: set[str] = set()
+        for r in mastery_records:
+            breakdown = r.component_breakdown or {}
+            for comp in all_components:
+                if breakdown.get(comp, 0) > 0:
+                    seen.add(comp)
+        missing_components = list(all_components - seen)
+    else:
+        missing_components = ["exercises", "quizzes", "code_quality", "streak"]
+
+    return {
+        "overall_mastery": overall_mastery,
+        "topics": topics,
+        "weak_areas": weak_areas,
+        "streak": streak_data,
+        "recommendations": recommendations,
+        "missing_components": missing_components,
+    }
 
 
 @router.get(

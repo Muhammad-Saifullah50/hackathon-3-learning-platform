@@ -59,13 +59,41 @@ class CodeReviewResponse(BaseModel):
     send_to_editor: Optional[CodeBlock] = None
 
 
+class ModuleProgress(BaseModel):
+    name: str
+    mastery_percent: float = 0.0
+    level: str = "Beginner"
+
+
 class ProgressAgentResponse(BaseModel):
     response_type: Literal["progress"] = "progress"
     summary: str
     streak_days: int = 0
     next_recommended_topic: Optional[str] = None
-    modules: list[dict] = []
+    modules: list[ModuleProgress] = []
     send_to_editor: None = None
+
+
+class MCQQuestion(BaseModel):
+    type: Literal["mcq"] = "mcq"
+    question: str
+    options: list[str]
+    correct_index: int
+
+
+class FlashcardQuestion(BaseModel):
+    type: Literal["flashcard"] = "flashcard"
+    term: str
+    definition: str
+
+
+class QuizResponse(BaseModel):
+    response_type: Literal["quiz"] = "quiz"
+    module_slug: str
+    topic_label: str
+    mcq_questions: list[MCQQuestion]
+    flashcard_questions: list[FlashcardQuestion]
+    quiz_session_id: Optional[str] = None
 
 
 TutorResponse = Union[
@@ -74,4 +102,5 @@ TutorResponse = Union[
     ExerciseAgentResponse,
     CodeReviewResponse,
     ProgressAgentResponse,
+    QuizResponse,
 ]

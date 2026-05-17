@@ -1,0 +1,156 @@
+openapi: "3.1.0"
+info:
+  title: Grade Flashcard Answer
+  description: Submit a student's typed flashcard answer for AI grading.
+  version: "1.0.0"
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/quiz/{session_id}/grade-flashcard:
+    post:
+      operationId: gradeFlashcard
+      summary: Grade a flashcard answer
+      description: |
+        Submit the student's typed answer for a flashcard card. The backend
+        calls the LLM grader to classify the answer as Correct / Partial / Wrong
+        and returns a one-line feedback string.
+
+        This endpoint:
+        - Does NOT count toward the 15 msg/day chat quota.
+        - Transitions the quiz session from `generated` to `in_progress` on first call.
+        - Stores the answer and grade in quiz_sessions.student_answers / .grades.
+        - Requires ownership (student_id must match JWT user_id → 403 otherwise).
+      tags: [quiz]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GradeFlashcardRequest"
+            example:
+              card_index: 3
+              student_answer: "a shorthand way to create lists by iterating over something"
+      responses:
+        "200":
+          description: Flashcard graded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeFlashcardResponse"
+              example:
+                card_index: 3
+                grade: "Partial"
+                feedback: "Correct idea, but missing mention of the expression applied to each element."
+                session_status: "in_progress"
+        "400":
+          description: Invalid card index or card is not a flashcard type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Validation error (empty answer, out-of-range index)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+        "503":
+          description: AI grader temporarily unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    GradeFlashcardRequest:
+      type: object
+      required: [card_index, student_answer]
+      properties:
+        card_index:
+          type: integer
+          minimum: 3
+          maximum: 5
+          description: "Index of the flashcard (3, 4, or 5 — MCQ cards are 0-2)"
+        student_answer:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: "The student's typed definition/answer"
+
+    GradeFlashcardResponse:
+      type: object
+      required: [card_index, grade, feedback, session_status]
+      properties:
+        card_index:
+          type: integer
+        grade:
+          type: string
+          enum: [Correct, Partial, Wrong]
+        feedback:
+          type: string
+          description: "One-sentence feedback from the AI grader"
+        session_status:
+          type: string
+          enum: [generated, in_progress, completed]
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+    Forbidden:
+      description: User does not own this quiz session
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+    NotFound:
+      description: Quiz session not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
