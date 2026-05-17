@@ -1,0 +1,217 @@
+openapi: "3.1.0"
+info:
+  title: Submit Quiz Session
+  description: Finalize a quiz session, compute score, update mastery.
+  version: "1.0.0"
+
+paths:
+  /api/v1/quiz/{session_id}/submit:
+    post:
+      operationId: submitQuiz
+      summary: Submit and finalize a quiz session
+      description: |
+        Called when the student has answered all 6 cards. The client sends the
+        MCQ answers and grades (computed client-side) alongside flashcard answers
+        (already stored via grade-flashcard calls). The server:
+
+        1. Validates all 6 cards are answered.
+        2. Stores MCQ grades in quiz_sessions.grades.
+        3. Computes the final score (MCQ=1/0, Flashcard=1/0.5/0, total /6 → 0-100).
+        4. Sets quiz_sessions.status = completed, .score, .completed_at.
+        5. Updates mastery_records for the module_slug (most-recent quiz score strategy).
+        6. Flags struggle if score < 50.
+
+        This endpoint does NOT count toward the 15 msg/day chat quota.
+        Requires ownership (student_id must match JWT user_id → 403 otherwise).
+      tags: [quiz]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitQuizRequest"
+            example:
+              mcq_answers:
+                - card_index: 0
+                  selected_index: 1
+                  is_correct: true
+                - card_index: 1
+                  selected_index: 0
+                  is_correct: false
+                - card_index: 2
+                  selected_index: 2
+                  is_correct: true
+      responses:
+        "200":
+          description: Quiz submitted and scored successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitQuizResponse"
+              example:
+                session_id: "550e8400-e29b-41d4-a716-446655440000"
+                score: 75.0
+                score_out_of_6: 4.5
+                per_card_results:
+                  - card_index: 0
+                    grade: "correct"
+                    points: 1.0
+                  - card_index: 1
+                    grade: "wrong"
+                    points: 0.0
+                  - card_index: 2
+                    grade: "correct"
+                    points: 1.0
+                  - card_index: 3
+                    grade: "Partial"
+                    points: 0.5
+                  - card_index: 4
+                    grade: "Correct"
+                    points: 1.0
+                  - card_index: 5
+                    grade: "Wrong"
+                    points: 0.0
+                mastery_updated: true
+                module_slug: "control_flow"
+                struggle_flagged: false
+        "400":
+          description: Quiz already completed or not all cards answered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MCQAnswerItem:
+      type: object
+      required: [card_index, selected_index, is_correct]
+      properties:
+        card_index:
+          type: integer
+          minimum: 0
+          maximum: 2
+        selected_index:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: "Which option the student selected (0-3)"
+        is_correct:
+          type: boolean
+          description: "Client-side evaluation against correct_index"
+
+    SubmitQuizRequest:
+      type: object
+      required: [mcq_answers]
+      properties:
+        mcq_answers:
+          type: array
+          items:
+            $ref: "#/components/schemas/MCQAnswerItem"
+          minItems: 3
+          maxItems: 3
+          description: "All 3 MCQ answers with client-side grades"
+
+    PerCardResult:
+      type: object
+      required: [card_index, grade, points]
+      properties:
+        card_index:
+          type: integer
+          minimum: 0
+          maximum: 5
+        grade:
+          type: string
+          description: "'correct'|'wrong' for MCQ; 'Correct'|'Partial'|'Wrong' for flashcard"
+        points:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    SubmitQuizResponse:
+      type: object
+      required: [session_id, score, score_out_of_6, per_card_results, mastery_updated, module_slug, struggle_flagged]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: "Final score mapped to 0-100 scale"
+        score_out_of_6:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 6
+          description: "Raw score before scaling"
+        per_card_results:
+          type: array
+          items:
+            $ref: "#/components/schemas/PerCardResult"
+          minItems: 6
+          maxItems: 6
+        mastery_updated:
+          type: boolean
+        module_slug:
+          type: string
+          enum: [basics, control_flow, data_structures, functions, oop, files, errors, libraries]
+        struggle_flagged:
+          type: boolean
+          description: "True if quiz score < 50 (struggle detection threshold)"
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+    Forbidden:
+      description: User does not own this quiz session
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+    NotFound:
+      description: Quiz session not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
