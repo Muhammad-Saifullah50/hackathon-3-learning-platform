@@ -319,7 +319,7 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Python 3.11+ (backend), TypeScript 5+ / React 19 (frontend) (014-interactive-code-editor)
 - Neon PostgreSQL (new `code_sessions` table), browser localStorage (auto-save fallback) (014-interactive-code-editor)
 - Python 3.11+ (backend), TypeScript 5+ / React 19 (frontend) + openai-agents>=0.13, react-markdown, react-syntax-highlighter (015-ai-tutor-chat)
-- Neon PostgreSQL — existing `agent_sessions` + two new columns (`title`, `surface`), `rate_limit_counters` reused for 5 msg/day chat quota (015-ai-tutor-chat)
+- Neon PostgreSQL — existing `agent_sessions` + two new columns (`title`, `surface`), `rate_limit_counters` reused for 15 msg/day chat quota (015-ai-tutor-chat)
 
 ## Recent Changes
 
@@ -341,7 +341,7 @@ Features **001 through 007 are complete**, **013 (Student Dashboard) and 014 (In
   - **T004** ✅ `AgentSession` model updated with `title TEXT` + `surface VARCHAR(20)` columns + `CheckConstraint`
   - **T005** ✅ `ChatSessionListItem`, `ChatSessionDetail`, `ChatQuotaStatus` schemas added to `src/schemas/agents.py`; `AgentChatRequest` extended with `execution_output` + `surface`
   - **T005b** ✅ `src/schemas/agent_responses.py` created with `ConceptResponse`, `DebugResponse`, `ExerciseAgentResponse`, `CodeReviewResponse`, `ProgressAgentResponse`, `CodeBlock`, `IssueItem`
-  - **T006** ✅ `ChatQuotaService` created in `src/services/chat_quota_service.py` (5 msg/day via `RateLimitCounter`)
+  - **T006** ✅ `ChatQuotaService` created in `src/services/chat_quota_service.py` (15 msg/day via `RateLimitCounter`)
   - **T007** ✅ `list_sessions()` + `get_session_detail()` added to `AgentSessionRepository`
   - **T008** ✅ `get_chat_quota_service()` dependency factory registered in `src/dependencies.py`
   - **T009** ✅ `off_topic` intent + `_is_off_topic()` added to `src/services/agents/triage.py`

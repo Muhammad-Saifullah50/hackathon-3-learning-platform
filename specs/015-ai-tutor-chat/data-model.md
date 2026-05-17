@@ -58,15 +58,15 @@ identifier = "{user_id}:chat:{UTC_date}"
 |--------|--------------------|
 | `identifier` | `{user_id}:chat:{date}` |
 | `identifier_type` | `USER_DAILY` |
-| `attempt_count` | messages sent today (0–5) |
+| `attempt_count` | messages sent today (0–15) |
 | `last_attempt_at` | timestamp of last message |
 | `created_at` | when first message of the day was sent |
 
 **Quota rules**:
-- Limit: 5 messages per UTC calendar day
+- Limit: 15 messages per UTC calendar day
 - Reset: identifier changes naturally at UTC midnight (new date → new row)
-- Check: `attempt_count < 5` → allowed; increment atomically via `ON CONFLICT DO UPDATE`
-- Remaining: `max(0, 5 - attempt_count)` after last increment
+- Check: `attempt_count < 15` → allowed; increment atomically via `ON CONFLICT DO UPDATE`
+- Remaining: `max(0, 15 - attempt_count)` after last increment
 
 ---
 
@@ -208,8 +208,8 @@ class ChatSessionDetail(BaseModel):
 ```python
 class ChatQuotaStatus(BaseModel):
     messages_sent_today: int
-    daily_limit: int  # always 5
-    remaining: int    # max(0, 5 - messages_sent_today)
+    daily_limit: int  # always 15
+    remaining: int    # max(0, 15 - messages_sent_today)
     quota_reset_at: datetime  # next UTC midnight
 ```
 

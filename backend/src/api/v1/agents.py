@@ -28,7 +28,7 @@ from src.dependencies import (
     get_user_streak_repository,
 )
 from src.schemas.code_editor import RateLimitErrorResponse
-from src.services.chat_quota_service import ChatQuotaService
+from src.services.chat_quota_service import ChatQuotaService, DAILY_LIMIT
 from src.services.code_session_service import CodeSessionService
 from src.models import User
 from src.models.agent_session import HintProgression
@@ -135,24 +135,10 @@ async def agent_chat(
 ):
     """Chat with the agent system. Routes the question to the appropriate specialist."""
     logger.info("Agent chat request from user=%s", current_user.id)
+    from datetime import datetime, timedelta, timezone as tz
 
-    # Enforce daily chat quota
-    from datetime import date, datetime, timedelta, timezone as tz
-    allowed, remaining = await quota_service.check_and_get_remaining(db, current_user.id)
-    if not allowed:
-        retry_after = (datetime.now(tz.utc).date() + timedelta(days=1)).isoformat()
-        return JSONResponse(
-            status_code=429,
-            content=RateLimitErrorResponse(
-                message="Daily chat quota exhausted (5 messages/day). Try again tomorrow.",
-                retry_after=retry_after,
-            ).model_dump(),
-        )
-
-    triage_result = classify_intent(request.message)
-    agent_name = get_agent_for_intent(triage_result.intent)
-
-    # Resolve or create session
+    # Validate session ownership BEFORE consuming quota so invalid sessions
+    # do not burn the user's daily allowance.
     if request.session_id:
         session_obj = await session_repo.get_session(request.session_id)
         if not session_obj:
@@ -161,6 +147,25 @@ async def agent_chat(
             raise HTTPException(status_code=403, detail="Not your session")
         session_id = session_obj.id
     else:
+        session_obj = None
+
+    # Enforce daily chat quota
+    allowed, remaining = await quota_service.check_and_get_remaining(db, current_user.id)
+    if not allowed:
+        retry_after = (datetime.now(tz.utc).date() + timedelta(days=1)).isoformat()
+        return JSONResponse(
+            status_code=429,
+            content=RateLimitErrorResponse(
+                message=f"Daily chat quota exhausted ({DAILY_LIMIT} messages/day). Try again tomorrow.",
+                retry_after=retry_after,
+            ).model_dump(),
+        )
+
+    triage_result = classify_intent(request.message)
+    agent_name = get_agent_for_intent(triage_result.intent)
+
+    # Create session if not provided
+    if session_obj is None:
         session_obj = await session_repo.create_session(user_id=current_user.id)
         session_id = session_obj.id
 
@@ -303,7 +308,7 @@ async def get_quota(
     "/sessions/{session_id}",
     summary="Get agent session details",
     description=(
-        "Return conversation history and routing decisions for a session. "
+        "Return conversation history for a session. "
         "Verifies user ownership."
     ),
     responses={

@@ -95,14 +95,14 @@ components:
         messages_sent_today:
           type: integer
           minimum: 0
-          maximum: 5
+          maximum: 15
         daily_limit:
           type: integer
-          example: 5
+          example: 15
         remaining:
           type: integer
           minimum: 0
-          maximum: 5
+          maximum: 15
         quota_reset_at:
           type: string
           format: date-time
@@ -155,7 +155,7 @@ components:
       properties:
         message:
           type: string
-          example: "You've used all 5 daily messages. Come back tomorrow!"
+          example: "You've used all 15 daily messages. Come back tomorrow!"
         retry_after:
           type: string
           format: date
@@ -172,7 +172,7 @@ paths:
       description: >
         The student's message is processed by the Triage Agent, which classifies
         intent and routes to the appropriate specialist agent. The response streams
-        via Server-Sent Events. A 429 is returned when the daily quota (5 messages)
+        via Server-Sent Events. A 429 is returned when the daily quota (15 messages)
         is exhausted.
       requestBody:
         required: true
@@ -237,7 +237,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         "429":
-          description: Daily chat quota exhausted (5 messages/day)
+          description: Daily chat quota exhausted (15 messages/day)
           content:
             application/json:
               schema:

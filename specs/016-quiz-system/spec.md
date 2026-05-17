@@ -130,7 +130,7 @@ Every quiz session — questions generated, student answers, and per-card grades
 - The topic is inferred from the current chat conversation context by the quiz-generating agent; the student does not manually pick a topic.
 - MCQ correct answers are embedded in the structured output at generation time; MCQ grading is entirely client-side.
 - The flashcard definition (correct answer) is also sent to the client at generation time (for the flip reveal); only the student's typed attempt is sent back to the server for AI grading.
-- Quiz interactions (MCQ taps, flashcard submits) do not count toward the 5 messages/day chat quota.
+- Quiz interactions (MCQ taps, flashcard submits) do not count toward the 15 messages/day chat quota.
 - The quiz score contribution to mastery follows the existing formula: quizzes = 30% of total mastery score.
 - A quiz session is "complete" only when all 6 cards have been answered and the final submit call succeeds.
 - Scoring: MCQ = 1 point if correct, 0 if wrong; Flashcard = 1 for Correct, 0.5 for Partial, 0 for Wrong. Total out of 6, mapped to 0–100 for mastery.

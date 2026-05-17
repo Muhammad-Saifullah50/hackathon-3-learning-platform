@@ -91,9 +91,9 @@ Navigate to `http://localhost:3000/chat` — the chat page should load (no longe
 
 1. Log in as a student
 2. Go to `/chat`
-3. Verify the quota badge shows "5 messages remaining"
+3. Verify the quota badge shows "15 messages remaining"
 4. Send "What is a Python list comprehension?"
-5. Verify: typing indicator appears → text streams in → code block is highlighted → message count drops to 4
+5. Verify: typing indicator appears → text streams in → code block is highlighted → message count drops to 14
 
 ### 3.2 Session persistence
 
@@ -112,9 +112,9 @@ Navigate to `http://localhost:3000/chat` — the chat page should load (no longe
 
 ### 3.4 Quota enforcement
 
-1. Send 5 messages in one session
-2. On the 5th response, verify "0 messages remaining" is shown
-3. Try to send a 6th message — verify the send button is disabled and the quota message is shown
+1. Send 15 messages in one session
+2. On the 15th response, verify "0 messages remaining" is shown
+3. Try to send a 16th message — verify the send button is disabled and the quota message is shown
 
 ### 3.5 Off-topic guardrail
 
@@ -152,7 +152,7 @@ npm run test -- --watch src/hooks/
 |------|---------|
 | `backend/alembic/versions/20260511_*_add_chat_session_title_surface.py` | DB migration |
 | `backend/src/models/agent_session.py` | `title` + `surface` columns |
-| `backend/src/services/chat_quota_service.py` | 5 msg/day enforcement |
+| `backend/src/services/chat_quota_service.py` | 15 msg/day enforcement |
 | `backend/src/api/v1/agents.py` | `/chat`, `/sessions`, `/sessions/{id}`, `/quota` |
 | `frontend/src/app/(student)/chat/page.tsx` | Standalone chat page |
 | `frontend/src/components/chat/ChatWindow.tsx` | Message list + SSE streaming |

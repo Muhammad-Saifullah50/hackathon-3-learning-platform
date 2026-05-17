@@ -192,7 +192,7 @@ class ChatSessionListItem(BaseModel):
     """Summary of a chat session for the session list."""
 
     id: str
-    title: str
+    title: Optional[str]
     surface: Optional[str]
     message_count: int
     last_message_at: datetime
@@ -203,7 +203,7 @@ class ChatSessionDetail(BaseModel):
     """Full chat session with conversation history."""
 
     id: str
-    title: str
+    title: Optional[str]
     surface: Optional[str]
     conversation_history: list[ConversationMessage]
     created_at: datetime

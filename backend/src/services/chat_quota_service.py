@@ -1,7 +1,7 @@
 """Chat quota enforcement using RateLimitCounter."""
 
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -17,7 +17,7 @@ class ChatQuotaService:
 
     @staticmethod
     def _identifier(user_id: uuid.UUID) -> str:
-        today = date.today().isoformat()
+        today = datetime.now(timezone.utc).date().isoformat()
         return f"{user_id}:chat:{today}"
 
     async def check_and_get_remaining(

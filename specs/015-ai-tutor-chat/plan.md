@@ -26,7 +26,7 @@ Build a real-time AI tutor chat available as both a standalone `/chat` page and 
 - Page load ≤ 800 ms SSR; FastAPI non-AI routes ≤ 150 ms p95
 **Constraints**:
 - 2000-character message input cap (FR-018)
-- 5 messages/student/day quota (FR-020) enforced server-side
+- 15 messages/student/day quota (FR-020) enforced server-side
 - Code context ≤ 4 KB per message (FR-013)
 - Conversation history window: last 5 messages (FR-012)
 - OpenAI Agents SDK streaming bug (#601) was present in v0.12 but **fixed in v0.13**. Upgrade `openai-agents` to `>=0.13` as part of this feature. Use `Runner.run_streamed` for true per-token SSE.
@@ -86,7 +86,7 @@ backend/
 │   ├── schemas/
 │   │   └── agents.py               ← add ChatSessionListItem, ChatSessionDetail, ChatQuotaStatus
 │   ├── services/
-│   │   └── chat_quota_service.py   ← NEW: 5 msg/day enforcement via RateLimitCounter
+│   │   └── chat_quota_service.py   ← NEW: 15 msg/day enforcement via RateLimitCounter
 │   ├── dependencies.py             ← add get_chat_quota_service()
 │   └── api/v1/
 │       └── agents.py               ← add GET /sessions, GET /sessions/{id} endpoints;

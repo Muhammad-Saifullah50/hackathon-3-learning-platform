@@ -148,14 +148,14 @@ A student types "Give me a practice problem on dictionaries." The Triage Agent r
 - **FR-018**: The chat input MUST enforce a 2000-character maximum with a visible character counter.
 - **FR-019**: The send button MUST be disabled when the input is empty or when a response is already being streamed.
 - **FR-021**: The chat UI MUST meet basic accessibility requirements: ARIA labels on all interactive elements (input, send button, session list), Enter key submits a message (Shift+Enter inserts newline), and new AI messages MUST be announced to screen readers via an `aria-live="polite"` region.
-- **FR-020**: System MUST enforce a rate limit of **5 chat messages per student per day** (UTC). When the limit is reached, the send button is disabled and a clear message is shown (e.g., "You've used all 5 daily messages. Come back tomorrow!"). The remaining message count MUST be visible in the chat UI.
+- **FR-020**: System MUST enforce a rate limit of **15 chat messages per student per day** (UTC). When the limit is reached, the send button is disabled and a clear message is shown (e.g., "You've used all 15 daily messages. Come back tomorrow!"). The remaining message count MUST be visible in the chat UI.
 
 ### Key Entities
 
 - **Chat Session**: A conversation thread tied to a student. Has a unique identifier, creation timestamp, title (derived from the first message or auto-generated timestamp), and belongs to one student. A student may have **multiple saved sessions**; all are persisted. Surface type (standalone vs. embedded) is recorded per session but does not limit how many sessions a student can have.
 - **Chat Message**: A single turn in the conversation. Belongs to a chat session. Has a role (student or AI), message content, timestamp, and the agent type that handled it (Triage, Concepts, Debug, etc.). Stores which specialist agent produced the response. The stored content is the structured response JSON (not raw text) for AI messages.
 - **Agent Routing Decision**: Records which specialist agent the Triage Agent selected for a given message and with what confidence. Used for observability and future improvement.
-- **Chat Quota**: Tracks daily message usage per student. Fields: `student_id`, `messages_sent_today` (integer), `quota_reset_date` (UTC date). Reset to 0 when the current date exceeds `quota_reset_date`. Stored in a `chat_quota` table in Neon PostgreSQL.
+- **Chat Quota**: Tracks daily message usage per student. Fields: `student_id`, `messages_sent_today` (integer, max 15), `quota_reset_date` (UTC date). Reset to 0 when the current date exceeds `quota_reset_date`. Stored via the `rate_limit_counters` table in Neon PostgreSQL (reuses existing infrastructure).
 - **CodeBlock**: A reusable sub-entity within structured responses. Fields: `code` (the Python source), `language` (always `"python"` for this platform), `caption` (optional label). Present in all response types that include code.
 - **ConceptResponse**: Structured output of the Concepts Agent. Fields: `explanation` (prose), `code_blocks` (list of CodeBlock, 0–3 examples), `key_points` (bullet list of takeaways), `related_topics` (list of Python topic names for follow-up).
 - **DebugResponse**: Structured output of the Debug Agent. Fields: `error_identified` (the error name/message), `explanation` (why it occurred), `hint` (progressive hint text, shown before fix), `fix_code` (optional CodeBlock with corrected code, included only after the hint), `send_to_editor` (same as `fix_code` when present — triggers "Apply Fix in Editor" button).
@@ -186,7 +186,7 @@ A student types "Give me a practice problem on dictionaries." The Triage Agent r
 ### Session 2026-05-11
 
 - Q: What streaming transport mechanism should be used for token-by-token AI responses? → A: SSE (Server-Sent Events) — HTTP streaming over a single long-lived POST connection.
-- Q: What is the per-student rate limit for chat messages? → A: 5 messages per day per student.
+- Q: What is the per-student rate limit for chat messages? → A: 15 messages per day per student.
 - Q: Can students create multiple chat sessions, or is there one persistent thread per surface? → A: Students can create multiple chat sessions; all sessions are saved and remain accessible.
 - Q: Where should the daily chat message quota counter be stored? → A: Database — `messages_sent_today` and `quota_reset_date` tracked in a `chat_quota` table in Neon PostgreSQL.
 - Q: What level of accessibility is required for the chat UI? → A: Basic — ARIA labels on interactive elements, Enter key to submit, new AI messages announced to screen readers via `aria-live` region.

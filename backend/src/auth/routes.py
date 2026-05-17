@@ -129,11 +129,12 @@ async def create_stateless_token(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Create a stateless access token (no session_id) for Better Auth session storage.
+    Create an access token for the Better Auth session storage layer.
 
-    The returned token bypasses session revocation checks, making it suitable
-    for long-lived storage in the Better Auth session. Still RS256-signed with
-    the standard expiry (JWT_ACCESS_TOKEN_EXPIRE_MINUTES).
+    This token is intended to be called once during the login proxy flow so that
+    Better Auth can store a FastAPI-compatible JWT alongside its own session.
+    The token is RS256-signed and expires in JWT_ACCESS_TOKEN_EXPIRE_MINUTES.
+    It must only be invoked from the server-side login proxy, not from client code.
     """
     from src.auth.jwt import create_access_token
     token = create_access_token(current_user.id, current_user.role, current_user.email)

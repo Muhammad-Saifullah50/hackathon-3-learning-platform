@@ -7,7 +7,7 @@ and hint progression tracking.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, Column, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import CheckConstraint, Column, Float, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -54,9 +54,8 @@ class AgentSession(Base, TimestampMixin):
             "surface IN ('standalone', 'embedded') OR surface IS NULL",
             name="check_agent_session_surface",
         ),
-        Index("idx_agent_session_user_id", "user_id"),
+        Index("idx_agent_session_user_updated", "user_id", text("updated_at DESC")),
         Index("idx_agent_session_status", "status"),
-        Index("idx_agent_session_updated_at", "updated_at"),
     )
 
 

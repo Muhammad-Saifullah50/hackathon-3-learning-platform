@@ -55,7 +55,7 @@
 
 ## 2. Chat Quota Storage — New Table vs. Existing `RateLimitCounter`
 
-**Decision**: Reuse `RateLimitCounter` with identifier pattern `{user_id}:chat:{UTC_date}` (e.g., `abc123:chat:2026-05-11`), limit = 5, window = daily.
+**Decision**: Reuse `RateLimitCounter` with identifier pattern `{user_id}:chat:{UTC_date}` (e.g., `abc123:chat:2026-05-11`), limit = 15, window = daily.
 
 **Rationale**: `RateLimitCounter` already implements atomic upsert via `pg_insert ... on_conflict_do_update` and is used for code review rate limiting with exactly the same semantics. The spec names a `chat_quota` table, but that is a logical name, not a schema mandate. Reusing `RateLimitCounter` avoids a new migration for equivalent functionality. The `ChatQuotaService` will wrap this pattern and expose `check_and_get_remaining(user_id)` returning `(allowed: bool, remaining: int)`.
 
@@ -141,12 +141,12 @@
 
 ## 9. Off-Topic Guardrail Implementation
 
-**Decision**: The existing `classify_intent` function in `src/services/agents/triage.py` returns an `Intent` enum. Add an `off_topic` intent value and a guardrail response. When `triage_result.intent == 'off_topic'`, the `/chat` endpoint returns a canned redirect response ("I'm here to help with Python learning! Try asking me about Python syntax, debugging, or coding exercises.") directly without spinning up any specialist agent.
+**Decision (implemented)**: The Triage Agent uses the OpenAI Agents SDK input guardrail feature (`InputGuardrail`) to detect off-topic messages. When triggered, the SDK raises `InputGuardrailTripwireTriggered`, which the `/chat` endpoint catches and returns a canned redirect response ("I'm here to help with Python learning! Try asking me about Python syntax, debugging, or coding exercises.") directly without spinning up any specialist agent.
 
-**Rationale**: Inspection of the existing triage code shows it uses keyword/pattern matching. Adding `off_topic` detection is additive and doesn't break any existing routing. The spec (FR-016) requires polite redirect, not a hard error.
+**Rationale**: SDK-level guardrails intercept the message before the Triage Agent runs, giving consistent enforcement regardless of triage confidence. The canned response is persisted to conversation history so session continuity is preserved.
 
 **Alternatives considered**:
-- LLM-based guardrail (separate classification call) — rejected for MVP; keyword matching is sufficient and eliminates extra LLM cost per message
+- Keyword/pattern matching in triage — rejected; superseded by SDK guardrail which is more robust and declarative
 - System prompt instruction only — rejected; unreliable when students are adversarial
 
 ---
@@ -158,7 +158,7 @@
 | Streaming transport for SSE | `Runner.run_streamed` (openai-agents v0.13 fixes #601); upgrade from v0.12 |
 | Structured agent output | OpenAI Agents SDK `output_type` Pydantic model per agent; `event: structured` SSE carries JSON |
 | `send_to_editor` mechanism | `send_to_editor: CodeBlock \| None` field on response types; "Load in Editor" button when non-null |
-| Chat quota storage | `RateLimitCounter` with `{user_id}:chat:{date}` identifier; limit=5/day |
+| Chat quota storage | `RateLimitCounter` with `{user_id}:chat:{date}` identifier; limit=15/day |
 | Session title source | Server-side: first 60 chars of first student message |
 | `agent_sessions` schema | Add `title TEXT`, `surface VARCHAR(20)` via new Alembic migration |
 | Code block rendering | Rendered from structured `code_blocks` field (Prism Python, dynamic import) — no markdown parsing |
