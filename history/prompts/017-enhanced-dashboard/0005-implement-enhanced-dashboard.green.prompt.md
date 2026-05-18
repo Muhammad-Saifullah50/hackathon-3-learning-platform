@@ -52,7 +52,7 @@ tests:
 
 ## Response snapshot
 
-Implemented all 34 tasks for Feature 017 (Enhanced Student Dashboard & Module Progress Detail):
+Implemented all 33 tasks for Feature 017 (Enhanced Student Dashboard & Module Progress Detail):
 
 **Phase 1 (T001)**: Created Alembic migration `20260518_add_mastery_snapshots.py` with UUID PK, user_id/module_id FKs, score float, recorded_at TIMESTAMPTZ, and two indexes. Migration applied successfully to Neon DB.
 

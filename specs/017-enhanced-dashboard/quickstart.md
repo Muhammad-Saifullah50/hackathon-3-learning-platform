@@ -22,7 +22,7 @@ cd backend
 alembic upgrade head
 ```
 
-This applies `YYYYMMDD_add_mastery_snapshots.py`, creating the `mastery_snapshots` table with appropriate indexes.
+This applies `20260518_add_mastery_snapshots.py`, creating the `mastery_snapshots` table with appropriate indexes.
 
 ### 2. Verify the new table exists
 
@@ -87,7 +87,7 @@ npm run dev
 
 | File | Purpose |
 |---|---|
-| `backend/alembic/versions/YYYYMMDD_add_mastery_snapshots.py` | DB migration — new table |
+| `backend/alembic/versions/20260518_add_mastery_snapshots.py` | DB migration — new table |
 | `backend/src/api/v1/dashboard.py` | New router: mastery-history + 2 SSE endpoints |
 | `backend/src/schemas/dashboard.py` | Pydantic: MasterySnapshotResponse, RecommendationItem, TopicProgressItem |
 | `backend/src/repositories/mastery_snapshot_repository.py` | Query mastery_snapshots table |

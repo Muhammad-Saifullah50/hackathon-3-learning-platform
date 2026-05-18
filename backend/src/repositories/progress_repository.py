@@ -1,12 +1,16 @@
 """Progress repository - operations for UserExerciseProgress, UserQuizAttempt, UserModuleMastery."""
+import logging
 from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import select, func, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 import asyncio
 
 from src.models.progress import UserExerciseProgress, UserQuizAttempt, UserModuleMastery
+
+logger = logging.getLogger(__name__)
 
 
 class ProgressRepository:
@@ -166,8 +170,8 @@ class ProgressRepository:
                         {"user_id": str(user_id), "module_id": module_id, "score": new_score},
                     )
                     await self.session.commit()
-                except Exception:
-                    # Non-critical — do not fail mastery update if snapshot insert fails
+                except SQLAlchemyError as snap_exc:
+                    logger.warning("mastery_snapshots insert failed (non-critical): %s", snap_exc)
                     await self.session.rollback()
 
                 return mastery

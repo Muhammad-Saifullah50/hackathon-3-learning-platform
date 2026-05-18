@@ -61,10 +61,11 @@ Create two **new dedicated routers** (`dashboard.py`):
 Modules are seeded by title (not slug). Module IDs are auto-assigned integers by PostgreSQL. The spec uses human-readable slugs (e.g., `control-flow`) in URLs.
 
 ### Decision
-Hardcode a slug→order mapping in the backend (since module titles are static curriculum). Resolve slug to module_id via a JOIN on `modules.order` or by querying `modules.title`.
+Hardcode a slug set in the backend for **URL validation only** (confirming the slug is a known module). The integer values in the original mapping are unused — do not rely on them for DB lookups, as auto-assigned IDs are not guaranteed to be stable across environments or re-seeds.
 
 ```python
-MODULE_SLUG_MAP = {
+# Keys are the valid URL slugs. Integer values are unused — only the key set matters.
+MODULE_SLUG_MAP: dict[str, int] = {
     "basics": 1,
     "control-flow": 2,
     "data-structures": 3,
@@ -75,6 +76,8 @@ MODULE_SLUG_MAP = {
     "libraries": 8,
 }
 ```
+
+If a module_id is needed for a DB query, resolve it via `SELECT id FROM modules WHERE title = :title` or a `modules.slug` column — never via a hardcoded integer. The dashboard SSE endpoints pass the slug string directly to the Progress Agent context; no module_id DB resolution is required.
 
 The frontend `ModuleCard` receives `id` (currently the module slug). The `module-grid` will derive slugs from existing module data. The "View Progress" button href becomes `/module/{module.id}/progress`.
 

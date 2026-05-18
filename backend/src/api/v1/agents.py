@@ -200,12 +200,13 @@ async def agent_chat(
         history = list(session_obj.conversation_history or [])
         # history already includes the current user message (added above)
         if history:
+            # Cap to last 10 turns to bound prompt size; truncate long content for both roles.
+            recent = history[-10:]
             convo_lines = []
-            for entry in history:
+            for entry in recent:
                 role = entry.get("role", "user").capitalize()
                 content = entry.get("content", "")
-                # Truncate very long assistant messages to keep context manageable
-                if entry.get("role") == "assistant" and len(content) > 500:
+                if len(content) > 500:
                     content = content[:500] + "…"
                 convo_lines.append(f"{role}: {content}")
             convo_text = "\n".join(convo_lines)
