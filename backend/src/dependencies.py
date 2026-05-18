@@ -21,6 +21,7 @@ from src.repositories.agent_session_repository import AgentSessionRepository
 from src.repositories.code_session_repository import CodeSessionRepository
 from src.repositories.exercise_repository import ExerciseRepository
 from src.repositories.mastery_repository import MasteryRepository
+from src.repositories.mastery_snapshot_repository import MasterySnapshotRepository
 from src.repositories.routing_repository import RoutingRepository
 from src.services.chat_quota_service import ChatQuotaService
 from src.services.code_session_service import CodeSessionService
@@ -143,6 +144,13 @@ async def get_code_session_service(
 ) -> CodeSessionService:
     """Get CodeSessionService instance."""
     return CodeSessionService(repo)
+
+
+async def get_mastery_snapshot_repository(
+    db: AsyncSession = Depends(get_db),
+) -> MasterySnapshotRepository:
+    """Get MasterySnapshotRepository instance."""
+    return MasterySnapshotRepository(db)
 
 
 def get_chat_quota_service() -> ChatQuotaService:

@@ -6,7 +6,7 @@ parameters into every SDK agent, tool, and handoff call.
 
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,4 +33,7 @@ class LearnFlowContext:
     code_snippet: Optional[str] = None
     level: Optional[str] = None
     intent: Optional[str] = None
+    agent_mode: Optional[Literal["recommendations", "module_detail"]] = None
+    module_slug: Optional[str] = None
+    mastery_context: Optional[str] = None
     extra: dict[str, Any] = field(default_factory=dict)

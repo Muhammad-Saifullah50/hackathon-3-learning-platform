@@ -71,6 +71,7 @@ class ProgressAgentResponse(BaseModel):
     streak_days: int = 0
     next_recommended_topic: Optional[str] = None
     modules: list[ModuleProgress] = []
+    recommendations: list[str] = []
     send_to_editor: None = None
 
 

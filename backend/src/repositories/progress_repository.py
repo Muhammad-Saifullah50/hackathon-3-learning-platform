@@ -1,7 +1,7 @@
 """Progress repository - operations for UserExerciseProgress, UserQuizAttempt, UserModuleMastery."""
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.exc import StaleDataError
 import asyncio
@@ -155,6 +155,21 @@ class ProgressRepository:
 
                 await self.session.commit()
                 await self.session.refresh(mastery)
+
+                # Side-effect: append to mastery_snapshots for time-series charting
+                try:
+                    await self.session.execute(
+                        text(
+                            "INSERT INTO mastery_snapshots (user_id, module_id, score) "
+                            "VALUES (:user_id, :module_id, :score)"
+                        ),
+                        {"user_id": str(user_id), "module_id": module_id, "score": new_score},
+                    )
+                    await self.session.commit()
+                except Exception:
+                    # Non-critical — do not fail mastery update if snapshot insert fails
+                    await self.session.rollback()
+
                 return mastery
 
             except StaleDataError:

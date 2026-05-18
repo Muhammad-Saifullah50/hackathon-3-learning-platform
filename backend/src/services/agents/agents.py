@@ -16,7 +16,9 @@ from src.llm.prompts import (
     get_concept_agent_prompt,
     get_debug_agent_prompt,
     get_exercise_agent_prompt,
+    get_module_detail_prompt,
     get_progress_agent_prompt,
+    get_recommendations_prompt,
 )
 from src.repositories.exercise_repository import ExerciseRepository
 from src.repositories.mastery_repository import MasteryRepository
@@ -244,14 +246,18 @@ def get_quiz_agent() -> Agent[LearnFlowContext]:
     def dynamic_instructions(
         context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
     ) -> str:
-        topic_hint = f" Focus on the topic: {context.context.topic}." if context.context.topic else ""
+        topic_hint = f" The topic is explicitly: {context.context.topic}." if context.context.topic else (
+            " Read the full conversation provided in the input and identify what Python topic "
+            "the student was learning about. Quiz them on THAT topic — do not default to "
+            "unrelated curriculum topics."
+        )
         return (
             "You are a Python quiz generator. Generate a quiz with exactly 3 multiple-choice "
             "questions followed by exactly 3 flashcard questions.\n\n"
             "Rules:\n"
             "- module_slug MUST be one of: basics, control_flow, data_structures, functions, "
             "oop, files, errors, libraries\n"
-            "- topic_label is a short human-readable label (e.g. 'For Loops')\n"
+            "- topic_label is a short human-readable label (e.g. 'For Loops', 'Starlette')\n"
             "- Each MCQ has exactly 4 options and a correct_index (0-3)\n"
             "- Each flashcard has a term and a definition\n"
             "- mcq_questions must have exactly 3 items\n"
@@ -273,14 +279,23 @@ def get_quiz_agent() -> Agent[LearnFlowContext]:
 
 
 def get_progress_agent() -> Agent[LearnFlowContext]:
-    """Progress agent that summarizes learning progress and mastery."""
+    """Progress agent that summarizes learning progress, mastery, and recommendations."""
 
     def dynamic_instructions(
         context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
     ) -> str:
+        lf_ctx = context.context
+        mastery_ctx = lf_ctx.mastery_context or ""
+
+        if lf_ctx.agent_mode == "recommendations":
+            return get_recommendations_prompt(mastery_ctx)
+
+        if lf_ctx.agent_mode == "module_detail" and lf_ctx.module_slug:
+            return get_module_detail_prompt(lf_ctx.module_slug, mastery_ctx)
+
         base = get_progress_agent_prompt()
         user_context = (
-            f"Student user_id: {context.context.user_id}. "
+            f"Student user_id: {lf_ctx.user_id}. "
             "Mastery formula: exercises 40%, quizzes 30%, code quality 20%, streak 10%. "
             "Mastery levels: 0-40% Beginner, 41-70% Learning, 71-90% Proficient, 91-100% Mastered. "
             "If no data is available, encourage the student and suggest starting with Module 1 (Basics)."

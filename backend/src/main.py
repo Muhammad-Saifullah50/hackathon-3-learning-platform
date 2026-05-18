@@ -12,6 +12,7 @@ from src.api.routes.admin import router as admin_router
 from src.api.routes.profile import router as profile_router
 from src.api.v1.agents import router as agents_router
 from src.api.v1.code_editor import router as code_editor_router
+from src.api.v1.dashboard import module_router, router as dashboard_router
 from src.api.v1.quiz import router as quiz_router
 from src.api.v1.code_execution import router as code_execution_router
 from src.api.v1.llm import router as llm_router
@@ -104,3 +105,7 @@ app.include_router(code_editor_router, tags=["Code Editor"])
 
 # Include quiz routes
 app.include_router(quiz_router, tags=["Quiz"])
+
+# Include dashboard routes (F017)
+app.include_router(dashboard_router, prefix="/api/v1", tags=["Dashboard"])
+app.include_router(module_router, prefix="/api/v1", tags=["Dashboard"])

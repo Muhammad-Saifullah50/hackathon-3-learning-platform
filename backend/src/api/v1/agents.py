@@ -193,6 +193,29 @@ async def agent_chat(
         intent=triage_result.intent,
     )
 
+    # For quiz requests, pass the full conversation history so the agent can
+    # determine the topic itself rather than relying on a single message heuristic.
+    agent_input = request.message
+    if agent_name == "quiz" and session_obj is not None:
+        history = list(session_obj.conversation_history or [])
+        # history already includes the current user message (added above)
+        if history:
+            convo_lines = []
+            for entry in history:
+                role = entry.get("role", "user").capitalize()
+                content = entry.get("content", "")
+                # Truncate very long assistant messages to keep context manageable
+                if entry.get("role") == "assistant" and len(content) > 500:
+                    content = content[:500] + "…"
+                convo_lines.append(f"{role}: {content}")
+            convo_text = "\n".join(convo_lines)
+            agent_input = (
+                f"Conversation so far:\n{convo_text}\n\n"
+                f"Student request: {request.message}\n\n"
+                "Based on the conversation above, identify the topic being discussed "
+                "and generate a quiz on that exact topic."
+            )
+
     _agent_factory_map = {
         "code_review": get_code_review_agent,
         "concepts": get_concepts_agent,
@@ -211,7 +234,7 @@ async def agent_chat(
 
     streamed = Runner.run_streamed(
         selected_agent,
-        input=request.message,
+        input=agent_input,
         context=lf_ctx,
         hooks=hooks,
         run_config=run_config,

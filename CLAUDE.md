@@ -322,6 +322,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon PostgreSQL — existing `agent_sessions` + two new columns (`title`, `surface`), `rate_limit_counters` reused for 15 msg/day chat quota (015-ai-tutor-chat)
 - Python 3.13 (backend) · TypeScript 5+ / React 19 (frontend) + FastAPI, openai-agents ≥0.13, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic 1.13+, Next.js 14+, Tailwind CSS, LiteLLM via existing `LlmClient` (016-quiz-system)
 - Neon PostgreSQL — new `quiz_sessions` table (JSONB `questions`, `student_answers`, `grades`); existing `mastery_records` table updated on submit (016-quiz-system)
+- Python 3.11+ (backend) · TypeScript 5+ / React 19 (frontend) (017-enhanced-dashboard)
+- Neon PostgreSQL — new `mastery_snapshots` table; all other reads from existing `user_module_mastery`, `modules` (017-enhanced-dashboard)
 
 ## Recent Changes
 

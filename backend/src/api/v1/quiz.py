@@ -218,7 +218,31 @@ async def submit_quiz(
     _ownership_check(quiz, current_user)
 
     if quiz.status == "completed":
-        raise HTTPException(status_code=400, detail="Quiz already completed")
+        # Idempotent: reconstruct and return the stored result instead of 400.
+        stored_grades = quiz.grades or {}
+        per_card_results = []
+        for idx in range(6):
+            g = stored_grades.get(str(idx), "wrong")
+            if idx < 3:
+                pts = 1.0 if g in ("correct", "Correct") else 0.0
+                per_card_results.append(
+                    PerCardResult(card_index=idx, card_type="mcq", grade=g, points=pts)
+                )
+            else:
+                g_lower = g.lower() if isinstance(g, str) else "wrong"
+                pts = 1.0 if g_lower == "correct" else (0.5 if g_lower == "partial" else 0.0)
+                per_card_results.append(
+                    PerCardResult(card_index=idx, card_type="flashcard", grade=g, points=pts)
+                )
+        return SubmitQuizResponse(
+            session_id=quiz_uuid,
+            score=quiz.score or 0.0,
+            score_out_of_6=sum(r.points for r in per_card_results),
+            per_card_results=per_card_results,
+            mastery_updated=False,
+            module_slug=quiz.module_slug,
+            struggle_flagged=False,
+        )
 
     if len(request.mcq_answers) != 3:
         raise HTTPException(status_code=400, detail="All 3 MCQ answers are required")

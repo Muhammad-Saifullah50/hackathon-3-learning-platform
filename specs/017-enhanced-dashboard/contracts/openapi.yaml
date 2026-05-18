@@ -1,0 +1,219 @@
+openapi: "3.1.0"
+info:
+  title: LearnFlow Dashboard API — F017
+  version: "1.0.0"
+  description: |
+    New endpoints added by Feature 017 (Enhanced Student Dashboard).
+    All endpoints require Bearer JWT authentication.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ──────────────────────────────────────────────
+    # Mastery History (for Mastery Over Time chart)
+    # ──────────────────────────────────────────────
+    MasterySnapshot:
+      type: object
+      required: [day, avg_score]
+      properties:
+        day:
+          type: string
+          format: date
+          description: Calendar date (YYYY-MM-DD)
+          example: "2026-05-10"
+        avg_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          example: 62.5
+
+    MasteryHistoryResponse:
+      type: object
+      required: [snapshots]
+      properties:
+        snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/MasterySnapshot"
+
+    # ──────────────────────────────────────────────
+    # Recommendations SSE Events
+    # ──────────────────────────────────────────────
+    RecommendationItem:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          example: "You're close to Proficient in Control Flow — take a quiz to push past 70%"
+        module_slug:
+          type: string
+          nullable: true
+          example: "control-flow"
+
+    # ──────────────────────────────────────────────
+    # Module Progress SSE Events
+    # ──────────────────────────────────────────────
+    TopicProgressItem:
+      type: object
+      required: [topic, status]
+      properties:
+        topic:
+          type: string
+          example: "ternary shorthand"
+        status:
+          type: string
+          enum: [covered, partial, remaining]
+        note:
+          type: string
+          nullable: true
+          example: "Understands basic syntax but not edge cases"
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ──────────────────────────────────────────────
+  # Dashboard: Mastery History (chart data)
+  # ──────────────────────────────────────────────
+  /api/v1/dashboard/mastery-history:
+    get:
+      summary: Get mastery score history for the authenticated student
+      description: |
+        Returns daily average mastery scores aggregated from `mastery_snapshots`.
+        Used to populate the "Mastery Over Time" line chart.
+        Returns an empty array when no snapshots exist.
+      tags: [dashboard]
+      responses:
+        "200":
+          description: Mastery history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MasteryHistoryResponse"
+              example:
+                snapshots:
+                  - day: "2026-05-10"
+                    avg_score: 45.0
+                  - day: "2026-05-12"
+                    avg_score: 58.3
+        "401":
+          description: Unauthorized
+
+  # ──────────────────────────────────────────────
+  # Dashboard: Recommendations (SSE)
+  # ──────────────────────────────────────────────
+  /api/v1/dashboard/recommendations/stream:
+    get:
+      summary: Stream AI-generated learning recommendations (SSE)
+      description: |
+        Opens a Server-Sent Events connection. The Progress Agent analyses the
+        authenticated student's mastery scores and emits 1–3 recommendation events.
+
+        **SSE Event Types**:
+        - `event: recommendation` — one per recommendation, `data` is JSON `RecommendationItem`
+        - `event: error` — agent error or timeout, `data` is `{"message": "..."}`
+        - `event: done` — terminal event, client should close the connection
+
+        **Timeout**: Server closes the connection after 30 seconds if agent has not responded.
+        **No quota**: This endpoint does not consume the chat quota.
+        **Auth**: Scoped to the authenticated student — no student_id parameter needed.
+      tags: [dashboard]
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                event: recommendation
+                data: {"text": "Take a quiz on Control Flow to push past 70%", "module_slug": "control-flow"}
+
+                event: recommendation
+                data: {"text": "Try the Data Structures exercises to reinforce your learning", "module_slug": "data-structures"}
+
+                event: done
+                data: {}
+        "401":
+          description: Unauthorized
+
+  # ──────────────────────────────────────────────
+  # Module Progress Detail (SSE)
+  # ──────────────────────────────────────────────
+  /api/v1/module/{moduleId}/progress/stream:
+    get:
+      summary: Stream AI-generated topic breakdown for a module (SSE)
+      description: |
+        Opens a Server-Sent Events connection. The Progress Agent analyses the
+        authenticated student's mastery scores for the given module and emits
+        topic progress events.
+
+        **Path param**: `moduleId` is the human-readable slug (e.g., `control-flow`).
+
+        **SSE Event Types**:
+        - `event: topic` — one per topic, `data` is JSON `TopicProgressItem`
+        - `event: error` — agent error or timeout or unknown slug, `data` is `{"message": "..."}`
+        - `event: done` — terminal event, client should close the connection
+
+        **Ordering**: Topics are emitted covered first, then remaining/partial.
+        **Timeout**: Server closes connection after 30 seconds.
+        **Auth**: Response is scoped strictly to the authenticated student.
+      tags: [module-progress]
+      parameters:
+        - name: moduleId
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - basics
+              - control-flow
+              - data-structures
+              - functions
+              - oop
+              - files
+              - errors
+              - libraries
+          example: control-flow
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                event: topic
+                data: {"topic": "if/else conditionals", "status": "covered", "note": null}
+
+                event: topic
+                data: {"topic": "ternary shorthand", "status": "partial", "note": "Understands basic syntax but not edge cases"}
+
+                event: topic
+                data: {"topic": "match statement (Python 3.10+)", "status": "remaining", "note": null}
+
+                event: done
+                data: {}
+        "404":
+          description: Unknown module slug
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    example: "Unknown module: 'bad-slug'"
+        "401":
+          description: Unauthorized

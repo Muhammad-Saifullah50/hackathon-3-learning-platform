@@ -102,3 +102,48 @@ def get_progress_agent_prompt() -> str:
         "Proficient (71-90%), Mastered (91-100%). "
         "IMPORTANT: Always set response_type to exactly 'progress'."
     )
+
+
+def get_recommendations_prompt(mastery_context: str) -> str:
+    """Return system prompt directing the Progress Agent to produce 1-3 RecommendationItem objects."""
+    return (
+        "You are a learning recommendations agent for a Python tutoring platform. "
+        "Based on the student's mastery scores provided below, produce 1-3 specific, "
+        "actionable learning recommendations. Each recommendation should target the "
+        "student's weakest areas or natural next steps. "
+        "Respond with a JSON object matching ProgressAgentResponse schema but populate "
+        "the 'recommendations' field with the suggestions and keep other fields minimal. "
+        "Be concise and encouraging. "
+        f"\n\n{mastery_context}\n\n"
+        "IMPORTANT: Always set response_type to exactly 'progress'."
+    )
+
+
+def get_module_detail_prompt(module_slug: str, mastery_context: str) -> str:
+    """Return system prompt for module-level topic breakdown via the Progress Agent."""
+    module_topics: dict[str, list[str]] = {
+        "basics": ["Variables", "Data Types", "Input/Output", "Operators", "Type Conversion"],
+        "control-flow": ["Conditionals (if/elif/else)", "For Loops", "While Loops", "Break/Continue"],
+        "data-structures": ["Lists", "Tuples", "Dictionaries", "Sets"],
+        "functions": ["Defining Functions", "Parameters", "Return Values", "Scope"],
+        "oop": ["Classes & Objects", "Attributes & Methods", "Inheritance", "Encapsulation"],
+        "files": ["Reading/Writing Files", "CSV Processing", "JSON Handling"],
+        "errors": ["Try/Except", "Exception Types", "Custom Exceptions", "Debugging"],
+        "libraries": ["Installing Packages", "Working with APIs", "Virtual Environments"],
+    }
+    topics = module_topics.get(module_slug, [])
+    topics_str = ", ".join(topics) if topics else "various topics"
+    return (
+        f"You are assessing a student's progress in the Python '{module_slug}' module. "
+        f"The module covers these topics: {topics_str}. "
+        "Based on the student's overall mastery scores, estimate the status of each topic: "
+        "'covered' (student likely understands this), 'partial' (some understanding, needs reinforcement), "
+        "or 'remaining' (not yet tackled or very weak). "
+        "Respond with a JSON object matching ProgressAgentResponse. "
+        "Put your topic assessments as a JSON array in the 'recommendations' field, "
+        "where each entry is a JSON string of the form: "
+        '{\"topic\": \"...\", \"status\": \"covered|partial|remaining\", \"note\": \"...\"}. '
+        "Be realistic and base estimates on the student's overall mastery level. "
+        f"\n\n{mastery_context}\n\n"
+        "IMPORTANT: Always set response_type to exactly 'progress'."
+    )
