@@ -289,7 +289,10 @@ async def agent_chat(
                     )
                     final.quiz_session_id = str(quiz_session.id)
                 except Exception as exc:
-                    logger.warning("Failed to create quiz session: %s", exc)
+                    logger.error("Failed to create quiz session: %s", exc)
+                    yield 'event: error\ndata: {"detail": "Quiz generation failed — could not save session."}\n\n'
+                    yield "data: [DONE]\n\n"
+                    return
 
             content = (
                 final.model_dump_json() if hasattr(final, "model_dump_json") else str(final)
@@ -852,7 +855,7 @@ async def get_progress_summary(
 
     missing_components: list[str] = []
     if mastery_records:
-        all_components = {"exercises", "quizzes", "code_quality", "consistency"}
+        all_components = {"exercises", "quizzes", "code_quality", "streak"}
         seen: set[str] = set()
         for r in mastery_records:
             breakdown = r.component_breakdown or {}
@@ -861,7 +864,7 @@ async def get_progress_summary(
                     seen.add(comp)
         missing_components = list(all_components - seen)
     else:
-        missing_components = ["exercises", "quizzes", "code_quality", "consistency"]
+        missing_components = ["exercises", "quizzes", "code_quality", "streak"]
 
     return {
         "overall_mastery": overall_mastery,

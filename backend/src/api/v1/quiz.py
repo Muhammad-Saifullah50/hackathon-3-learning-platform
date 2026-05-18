@@ -130,6 +130,9 @@ async def grade_flashcard(
         raise HTTPException(status_code=404, detail="Quiz session not found")
     _ownership_check(quiz, current_user)
 
+    if quiz.status == "completed":
+        raise HTTPException(status_code=400, detail="Quiz already completed — answers cannot be changed")
+
     card_index = request.card_index
     if card_index < 3 or card_index > 5:
         raise HTTPException(status_code=400, detail="card_index must be 3–5 for flashcards")
@@ -155,7 +158,8 @@ async def grade_flashcard(
     )
 
     llm = LlmClient()
-    grade_result: dict = {"grade": "Wrong", "feedback": "Could not grade."}
+    grading_failed = False
+    grade_result: dict = {}
     try:
         chunks = []
         async for text, _ in llm.stream_completion(
@@ -173,6 +177,10 @@ async def grade_flashcard(
         grade_result = json.loads(raw)
     except Exception as exc:
         logger.warning("Flashcard grading LLM error: %s", exc)
+        grading_failed = True
+
+    if grading_failed:
+        raise HTTPException(status_code=503, detail="AI grader temporarily unavailable — please try again")
 
     grade = grade_result.get("grade", "Wrong")
     if grade not in ("Correct", "Partial", "Wrong"):
@@ -247,21 +255,42 @@ async def submit_quiz(
     if len(request.mcq_answers) != 3:
         raise HTTPException(status_code=400, detail="All 3 MCQ answers are required")
 
-    # Build MCQ answer/grade maps
+    # Validate that submitted card indices cover exactly {0, 1, 2}
+    submitted_indices = {item.card_index for item in request.mcq_answers}
+    if submitted_indices != {0, 1, 2}:
+        raise HTTPException(status_code=400, detail="MCQ answers must cover card indices 0, 1, and 2 exactly once")
+
+    # Verify all flashcards (indices 3-5) have been graded before submission
+    flashcard_grades = quiz.grades or {}
+    for fc_idx in range(3, 6):
+        if str(fc_idx) not in flashcard_grades:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Flashcard {fc_idx} has not been graded yet — grade all flashcards before submitting",
+            )
+
+    # Build a lookup from the stored questions for server-side MCQ grading
+    questions = quiz.questions or []
+    mcq_correct_map: dict[int, int] = {}
+    for q_idx in range(3):
+        if q_idx < len(questions):
+            mcq_correct_map[q_idx] = questions[q_idx].get("correct_index", -1)
+
+    # Build MCQ answer/grade maps — correctness derived from stored questions, not client
     mcq_answer_map: dict[str, int] = {}
     mcq_grade_map: dict[str, str] = {}
     for item in request.mcq_answers:
-        key = str(item.card_index)
-        mcq_answer_map[key] = item.selected_index
-        mcq_grade_map[key] = "correct" if item.is_correct else "wrong"
+        server_correct = mcq_correct_map.get(item.card_index, -1)
+        is_correct = item.selected_index == server_correct
+        mcq_answer_map[str(item.card_index)] = item.selected_index
+        mcq_grade_map[str(item.card_index)] = "correct" if is_correct else "wrong"
 
     # Compute score
     per_card_results: list[PerCardResult] = []
     raw_points = 0.0
-    flashcard_grades = quiz.grades or {}
 
     for idx in range(3):
-        is_correct = request.mcq_answers[idx].is_correct
+        is_correct = mcq_grade_map.get(str(idx), "wrong") == "correct"
         pts = 1.0 if is_correct else 0.0
         raw_points += pts
         per_card_results.append(

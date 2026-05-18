@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 # ── Session state ─────────────────────────────────────────────────────────────
@@ -52,11 +52,17 @@ class GradeFlashcardResponse(BaseModel):
 class MCQAnswerItem(BaseModel):
     card_index: int = Field(ge=0, le=2)
     selected_index: int = Field(ge=0, le=3)
-    is_correct: bool
 
 
 class SubmitQuizRequest(BaseModel):
     mcq_answers: list[MCQAnswerItem] = Field(min_length=3, max_length=3)
+
+    @model_validator(mode="after")
+    def _unique_card_indices(self) -> "SubmitQuizRequest":
+        indices = [item.card_index for item in self.mcq_answers]
+        if len(set(indices)) != len(indices):
+            raise ValueError("mcq_answers must have unique card_index values")
+        return self
 
 
 class PerCardResult(BaseModel):

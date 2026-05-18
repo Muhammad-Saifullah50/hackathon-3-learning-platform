@@ -4,7 +4,7 @@
 **Branch**: `016-quiz-system` | **Date**: 2026-05-17
 **Prerequisites**: plan.md ✅ · spec.md ✅ · research.md ✅ · data-model.md ✅ · contracts/ ✅
 
-**Tests**: Not included by default (not requested in spec). Add if TDD approach is adopted.
+**Tests**: Required. Each phase below includes unit and integration test tasks for new persistence, auth checks, and scoring rules.
 
 **Organization**: Tasks grouped by user story to enable independent implementation and testing.
 

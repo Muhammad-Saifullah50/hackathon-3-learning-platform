@@ -4,6 +4,9 @@ info:
   description: Submit a student's typed flashcard answer for AI grading.
   version: "1.0.0"
 
+security:
+  - bearerAuth: []
+
 paths:
   /api/v1/quiz/{session_id}/grade-flashcard:
     post:
