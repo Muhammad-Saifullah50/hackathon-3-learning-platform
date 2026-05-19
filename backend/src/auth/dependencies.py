@@ -46,7 +46,16 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    result = await db.execute(select(User).where(User.id == UUID(user_id)))
+    try:
+        user_uuid = UUID(user_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
 
     if user is None:
@@ -59,8 +68,17 @@ async def get_current_user(
     if session_id:
         from src.auth.models import Session as SessionModel
 
+        try:
+            session_uuid = UUID(session_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         session_result = await db.execute(
-            select(SessionModel).where(SessionModel.id == UUID(session_id))
+            select(SessionModel).where(SessionModel.id == session_uuid)
         )
         session = session_result.scalar_one_or_none()
         if session and session.revoked_at is not None:

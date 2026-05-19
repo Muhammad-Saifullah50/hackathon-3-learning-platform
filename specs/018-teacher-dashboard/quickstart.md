@@ -104,8 +104,8 @@ Routes to verify after startup:
 1. Log in as teacher → navigate to `/teacher/exercises/generate`
 2. Enter incomplete prompt: "Create some exercises" → submit
 3. Verify: inline error listing missing items (topic, difficulty, module)
-4. Enter valid prompt: "Create 2 beginner Python for-loop exercises targeting Module 2 (Control Flow)"
-5. Verify: exercise preview appears with 2 questions
+4. Enter valid prompt: "Create 3 beginner Python for-loop exercises targeting Module 2 (Control Flow)"
+5. Verify: exercise preview appears with 3 questions
 6. Click "Assign to Class" → select "Python Basics" → confirm
 7. Verify: success message; assigned_to_count = 1
 
@@ -113,10 +113,10 @@ Routes to verify after startup:
 
 1. Log in as student → click "Assigned" tab in sidebar
 2. Verify: exercise appears labelled "Python Basics"
-3. Open exercise → verify 2 questions with descriptions
+3. Open exercise → verify 3 questions with descriptions
 4. Write code for Question 1 → click "Get AI Review"
 5. Verify: AI review and grade appear; submit button still disabled
-6. Write code for Question 2 → click "Get AI Review"
+6. Write code for Questions 2 and 3 → click "Get AI Review" for each
 7. Verify: submit button now enabled
 8. Click "Submit" → verify score displayed
 9. Navigate back to exercise → verify read-only state; resubmit button absent

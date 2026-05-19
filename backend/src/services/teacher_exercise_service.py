@@ -1,7 +1,10 @@
 """TeacherExerciseService — generate and assign multi-question exercises."""
 
+import logging
 import uuid
 from typing import Any, Literal
+
+logger = logging.getLogger(__name__)
 
 from agents import Agent, ModelSettings, Runner
 from pydantic import BaseModel, field_validator
@@ -104,6 +107,18 @@ class TeacherExerciseService:
         self._membership_repo = ClassMembershipRepository(session)
 
     async def generate(self, prompt: str, teacher_id: uuid.UUID) -> dict[str, Any]:
+        """Generate a 3-question coding exercise from a teacher's free-form prompt.
+
+        Runs a guardrail check first, then calls the AI agent with one retry.
+        Validates the output before persisting.
+
+        Args:
+            prompt: Teacher's free-form description of the desired exercise.
+            teacher_id: UUID of the teacher who will own the exercise.
+
+        Returns:
+            Dict with exercise fields on success, or error dict on failure.
+        """
         # 1. Run guardrail
         validation = await teacher_exercise_guardrail(prompt)
         if not validation.is_valid:
@@ -139,15 +154,16 @@ class TeacherExerciseService:
                 if attempt == 0:
                     continue
         if exercise_data is None:
+            logger.error("Exercise generation failed after retry: %s", last_exc)
             return {
                 "error": "generation_failed",
-                "detail": f"Exercise generation failed: {last_exc}",
+                "detail": "Exercise generation failed. Please try again with a more specific prompt.",
             }
 
         # Sanity-check parsed output before touching the DB
         if (
             not exercise_data
-            or not exercise_data.questions
+            or len(exercise_data.questions) != 3
             or exercise_data.difficulty not in _VALID_DIFFICULTIES
             or exercise_data.target_module not in _VALID_MODULES
             or not exercise_data.title.strip()
@@ -179,9 +195,24 @@ class TeacherExerciseService:
         }
 
     async def assign(self, exercise_id: uuid.UUID, class_id: uuid.UUID, teacher_id: uuid.UUID) -> dict[str, Any]:
-        # Verify exercise exists
+        """Assign a teacher-generated exercise to one of the teacher's classes.
+
+        Verifies both exercise ownership and class ownership before assigning.
+
+        Args:
+            exercise_id: UUID of the exercise to assign.
+            class_id: UUID of the target class.
+            teacher_id: UUID of the requesting teacher.
+
+        Returns:
+            Dict with class_exercise_id and assigned_to_count on success, or error dict.
+        """
         exercise = await self._repo.get_by_id(exercise_id)
         if not exercise:
+            return {"error": "not_found", "detail": "Exercise not found."}
+
+        # Verify the teacher owns the exercise
+        if exercise.created_by_id != teacher_id:
             return {"error": "not_found", "detail": "Exercise not found."}
 
         # Verify class ownership

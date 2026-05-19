@@ -218,7 +218,7 @@ A student who has accepted a class invitation can see the class name and teacher
 
 - The existing user model has a `role` field supporting at least `student` and `teacher` values (confirmed F01).
 - The Exercise Agent can be invoked directly with a free-form prompt and returns structured output: a list of questions each with description and optional starter code.
-- AI grading for assigned exercises reuses the Exercise Agent's grading capability established in F11/F16.
+- AI grading for assigned exercises uses the Code Review Agent to evaluate each student's submitted code per question.
 - A teacher can search across all registered students on the platform (not scoped to a subset).
 - Notification records created on submission are lightweight DB inserts; the UI for surfacing them is deferred to F22.
 - The "Generate Again" flow replaces the previous preview entirely; prior generations are not retained in the UI.

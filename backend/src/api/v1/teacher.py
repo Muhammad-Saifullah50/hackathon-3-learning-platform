@@ -37,7 +37,13 @@ def _invitation_service(db: AsyncSession = Depends(get_db)) -> InvitationService
 
 # --- Class management ---
 
-@router.post("/classes", response_model=ClassResponse, status_code=201)
+@router.post(
+    "/classes",
+    response_model=ClassResponse,
+    status_code=201,
+    summary="Create a class",
+    description="Creates a new class owned by the authenticated teacher.",
+)
 async def create_class(
     body: ClassCreate,
     current_user: User = Depends(require_role(["teacher"])),
@@ -46,7 +52,12 @@ async def create_class(
     return await svc.create_class(name=body.name, teacher_id=current_user.id)
 
 
-@router.get("/classes", response_model=list[ClassResponse])
+@router.get(
+    "/classes",
+    response_model=list[ClassResponse],
+    summary="List classes",
+    description="Returns all classes created by the authenticated teacher, with accepted member counts.",
+)
 async def list_classes(
     current_user: User = Depends(require_role(["teacher"])),
     svc: ClassService = Depends(_class_service),
@@ -54,7 +65,12 @@ async def list_classes(
     return await svc.list_classes(teacher_id=current_user.id)
 
 
-@router.get("/classes/{class_id}", response_model=ClassDetail)
+@router.get(
+    "/classes/{class_id}",
+    response_model=ClassDetail,
+    summary="Get class detail",
+    description="Returns full class detail including all members and their invitation statuses.",
+)
 async def get_class_detail(
     class_id: uuid.UUID,
     current_user: User = Depends(require_role(["teacher"])),
@@ -66,7 +82,12 @@ async def get_class_detail(
     return detail
 
 
-@router.get("/students/search", response_model=list[StudentSearchResult])
+@router.get(
+    "/students/search",
+    response_model=list[StudentSearchResult],
+    summary="Search students",
+    description="Returns students matching a partial name or email query. Used when inviting students to a class.",
+)
 async def search_students(
     q: str = Query(..., min_length=1, description="Partial name or email"),
     current_user: User = Depends(require_role(["teacher"])),
@@ -75,7 +96,12 @@ async def search_students(
     return await svc.search_students(query=q)
 
 
-@router.post("/classes/{class_id}/invitations", status_code=201)
+@router.post(
+    "/classes/{class_id}/invitations",
+    status_code=201,
+    summary="Invite student to class",
+    description="Sends a class invitation to a student. Returns 409 if already invited.",
+)
 async def invite_student(
     class_id: uuid.UUID,
     body: InviteStudentRequest,
@@ -95,7 +121,11 @@ async def invite_student(
 
 # --- Exercise generation and assignment (US3) ---
 
-@router.post("/exercises/generate")
+@router.post(
+    "/exercises/generate",
+    summary="Generate exercise",
+    description="Uses AI to generate a 3-question coding exercise from a teacher prompt. Returns the exercise preview.",
+)
 async def generate_exercise(
     body: ExerciseGenerateRequest,
     current_user: User = Depends(require_role(["teacher"])),
@@ -109,7 +139,12 @@ async def generate_exercise(
     return result
 
 
-@router.post("/exercises/{exercise_id}/assign", response_model=AssignResponse)
+@router.post(
+    "/exercises/{exercise_id}/assign",
+    response_model=AssignResponse,
+    summary="Assign exercise to class",
+    description="Assigns a previously generated exercise to one of the teacher's classes.",
+)
 async def assign_exercise(
     exercise_id: uuid.UUID,
     body: AssignExerciseRequest,

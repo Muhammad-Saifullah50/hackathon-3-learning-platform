@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.teacher_classes import (
@@ -68,9 +69,14 @@ class ClassExerciseSubmissionRepository:
             status="in_progress",
         )
         self.session.add(submission)
-        await self.session.commit()
-        await self.session.refresh(submission)
-        return submission
+        try:
+            await self.session.commit()
+            await self.session.refresh(submission)
+            return submission
+        except IntegrityError:
+            await self.session.rollback()
+            result = await self.session.execute(stmt)
+            return result.scalar_one()
 
     async def get_by_id(self, submission_id: uuid.UUID) -> Optional[ClassExerciseSubmission]:
         stmt = select(ClassExerciseSubmission).where(ClassExerciseSubmission.id == submission_id)
@@ -130,9 +136,26 @@ class QuestionReviewRepository:
             grade=grade,
         )
         self.session.add(review)
-        await self.session.commit()
-        await self.session.refresh(review)
-        return review
+        try:
+            await self.session.commit()
+            await self.session.refresh(review)
+            return review
+        except IntegrityError:
+            await self.session.rollback()
+            # Concurrent insert won — fetch and update it
+            conflict_stmt = select(QuestionReview).where(
+                QuestionReview.submission_id == submission_id,
+                QuestionReview.question_index == question_index,
+            )
+            result = await self.session.execute(conflict_stmt)
+            existing = result.scalar_one()
+            existing.student_code = student_code
+            existing.ai_review = ai_review
+            existing.grade = grade
+            existing.reviewed_at = datetime.now(timezone.utc)
+            await self.session.commit()
+            await self.session.refresh(existing)
+            return existing
 
     async def list_by_submission(self, submission_id: uuid.UUID) -> list[QuestionReview]:
         stmt = select(QuestionReview).where(QuestionReview.submission_id == submission_id).order_by(QuestionReview.question_index)

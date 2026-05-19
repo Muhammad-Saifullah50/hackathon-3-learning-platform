@@ -38,6 +38,14 @@ class StudentAssignmentService:
         self._notification_repo = TeacherNotificationRepository(session)
 
     async def list_assigned_exercises(self, student_id: uuid.UUID) -> list[AssignedExerciseSummary]:
+        """Return all exercises assigned to the student across their accepted classes.
+
+        Args:
+            student_id: UUID of the student.
+
+        Returns:
+            List of AssignedExerciseSummary objects.
+        """
         class_exercises = await self._class_exercise_repo.list_assigned_to_student(student_id)
         result = []
         for ce in class_exercises:
@@ -61,11 +69,19 @@ class StudentAssignmentService:
     async def get_exercise_detail(
         self, class_exercise_id: uuid.UUID, student_id: uuid.UUID
     ) -> Optional[AssignedExerciseDetail]:
+        """Return full exercise detail including questions and prior AI reviews.
+
+        Args:
+            class_exercise_id: UUID of the class exercise assignment.
+            student_id: UUID of the student (must be an accepted member).
+
+        Returns:
+            AssignedExerciseDetail if found and student has access, else None.
+        """
         ce = await self._class_exercise_repo.get_by_id(class_exercise_id)
         if not ce:
             return None
 
-        # Verify student is an accepted member of the class
         membership = await self._membership_repo.get_by_class_and_student(ce.class_id, student_id)
         if not membership or membership.status != "accepted":
             return None
@@ -118,11 +134,21 @@ class StudentAssignmentService:
         question_index: int,
         student_code: str,
     ) -> dict[str, Any]:
+        """Submit student code for a single question and return AI review + grade.
+
+        Args:
+            class_exercise_id: UUID of the class exercise assignment.
+            student_id: UUID of the student (must be an accepted member).
+            question_index: Zero-based index of the question being reviewed.
+            student_code: Python code submitted by the student.
+
+        Returns:
+            Dict with question_index, ai_review, and grade on success, or error dict.
+        """
         ce = await self._class_exercise_repo.get_by_id(class_exercise_id)
         if not ce:
             return {"error": "not_found", "detail": "Exercise not found."}
 
-        # Verify membership
         membership = await self._membership_repo.get_by_class_and_student(ce.class_id, student_id)
         if not membership or membership.status != "accepted":
             return {"error": "forbidden", "detail": "Access denied."}
@@ -131,16 +157,13 @@ class StudentAssignmentService:
         if not exercise:
             return {"error": "not_found", "detail": "Exercise not found."}
 
-        # Check question exists
         if question_index < 0 or question_index >= len(exercise.questions):
             return {"error": "bad_request", "detail": "Invalid question index."}
 
-        # Get or create submission
         submission = await self._submission_repo.get_or_create(ce.id, student_id)
         if submission.status == "submitted":
             return {"error": "conflict", "detail": "Exercise already submitted."}
 
-        # Call Code Review Agent
         from src.services.agents.agents import get_code_review_agent
         question_desc = exercise.questions[question_index].get("description", "") if exercise.questions else ""
         ctx = LearnFlowContext(
@@ -157,7 +180,6 @@ class StudentAssignmentService:
         )
         review_data = run_result.final_output
 
-        # Persist review (upsert)
         review = await self._review_repo.upsert(
             submission_id=submission.id,
             question_index=question_index,
@@ -173,9 +195,26 @@ class StudentAssignmentService:
         }
 
     async def submit_exercise(self, class_exercise_id: uuid.UUID, student_id: uuid.UUID) -> dict[str, Any]:
+        """Mark the exercise as submitted after all questions are reviewed.
+
+        Verifies the student is an accepted member of the class before processing.
+        Calculates the overall score as the average of all question grades.
+
+        Args:
+            class_exercise_id: UUID of the class exercise assignment.
+            student_id: UUID of the student.
+
+        Returns:
+            SubmitResponse on success, or error dict describing the failure.
+        """
         ce = await self._class_exercise_repo.get_by_id(class_exercise_id)
         if not ce:
             return {"error": "not_found", "detail": "Exercise not found."}
+
+        # Authorization: require accepted membership (consistent with review_question)
+        membership = await self._membership_repo.get_by_class_and_student(ce.class_id, student_id)
+        if not membership or membership.status != "accepted":
+            return {"error": "forbidden", "detail": "Access denied."}
 
         exercise = await self._teacher_exercise_repo.get_by_id(ce.exercise_id)
         if not exercise:
@@ -196,12 +235,9 @@ class StudentAssignmentService:
                 "detail": f"All {total_questions} questions must be reviewed before submitting.",
             }
 
-        # Calculate overall score
         overall_score = sum(r.grade for r in reviews) / len(reviews) if reviews else 0.0
-
         updated = await self._submission_repo.mark_submitted(submission, overall_score)
 
-        # Determine teacher for notification
         class_ = await self._class_repo.get_by_id(ce.class_id)
         if class_:
             await self._notification_repo.create(
