@@ -23,6 +23,15 @@ from src.repositories.exercise_repository import ExerciseRepository
 from src.repositories.mastery_repository import MasteryRepository
 from src.repositories.mastery_snapshot_repository import MasterySnapshotRepository
 from src.repositories.routing_repository import RoutingRepository
+from src.repositories.class_repository import ClassRepository
+from src.repositories.class_membership_repository import ClassMembershipRepository
+from src.repositories.class_exercise_repository import ClassExerciseRepository
+from src.repositories.teacher_exercise_repository import (
+    TeacherExerciseRepository,
+    ClassExerciseSubmissionRepository,
+    QuestionReviewRepository,
+    TeacherNotificationRepository,
+)
 from src.services.chat_quota_service import ChatQuotaService
 from src.services.code_session_service import CodeSessionService
 
@@ -156,3 +165,33 @@ async def get_mastery_snapshot_repository(
 def get_chat_quota_service() -> ChatQuotaService:
     """Get ChatQuotaService instance."""
     return ChatQuotaService()
+
+
+# F018 Teacher Dashboard repository dependencies
+
+async def get_class_repository(db: AsyncSession = Depends(get_db)) -> ClassRepository:
+    return ClassRepository(db)
+
+
+async def get_class_membership_repository(db: AsyncSession = Depends(get_db)) -> ClassMembershipRepository:
+    return ClassMembershipRepository(db)
+
+
+async def get_class_exercise_repository(db: AsyncSession = Depends(get_db)) -> ClassExerciseRepository:
+    return ClassExerciseRepository(db)
+
+
+async def get_teacher_exercise_repository(db: AsyncSession = Depends(get_db)) -> TeacherExerciseRepository:
+    return TeacherExerciseRepository(db)
+
+
+async def get_class_exercise_submission_repository(db: AsyncSession = Depends(get_db)) -> ClassExerciseSubmissionRepository:
+    return ClassExerciseSubmissionRepository(db)
+
+
+async def get_question_review_repository(db: AsyncSession = Depends(get_db)) -> QuestionReviewRepository:
+    return QuestionReviewRepository(db)
+
+
+async def get_teacher_notification_repository(db: AsyncSession = Depends(get_db)) -> TeacherNotificationRepository:
+    return TeacherNotificationRepository(db)

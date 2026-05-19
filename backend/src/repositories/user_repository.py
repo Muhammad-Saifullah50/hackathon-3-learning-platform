@@ -1,7 +1,7 @@
 """User repository - CRUD operations for User, UserProfile, UserStreak."""
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import select
+from sqlalchemy import cast, select, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user import User, UserProfile, UserStreak
@@ -27,7 +27,7 @@ class UserRepository:
 
     async def get_by_role(self, role: str) -> List[User]:
         """Get all users with a specific role."""
-        stmt = select(User).where(User.role == role, User.deleted_at.is_(None))
+        stmt = select(User).where(cast(User.role, String) == role, User.deleted_at.is_(None))
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

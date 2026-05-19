@@ -169,8 +169,8 @@ class AuthService:
                 detail="Invalid email or password",
             )
 
-        # Check email verification for teachers and admins
-        if user.role in ["teacher", "admin"] and user.email_verified_at is None:
+        # Check email verification for admins only (teachers and students can log in unverified)
+        if user.role == "admin" and user.email_verified_at is None:
             logger.warning(
                 f"Login failed - email not verified for user_id: {user.id}, email: {email}"
             )

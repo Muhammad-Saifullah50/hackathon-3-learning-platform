@@ -1,0 +1,401 @@
+openapi: "3.1.0"
+info:
+  title: LearnFlow Teacher API
+  description: |
+    All endpoints require `role=teacher`. Authorization enforced via
+    `require_role(['teacher'])` FastAPI dependency (returns 403 if not teacher).
+  version: "1.0.0"
+
+servers:
+  - url: /api/v1/teacher
+    description: Teacher API base path
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Class:
+      type: object
+      required: [id, name, teacher_id, member_count, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        teacher_id:
+          type: string
+          format: uuid
+        member_count:
+          type: integer
+          description: Number of accepted members
+        created_at:
+          type: string
+          format: date-time
+
+    ClassDetail:
+      allOf:
+        - $ref: '#/components/schemas/Class'
+        - type: object
+          properties:
+            members:
+              type: array
+              items:
+                $ref: '#/components/schemas/ClassMember'
+
+    ClassMember:
+      type: object
+      required: [membership_id, student_id, display_name, email, status, invited_at]
+      properties:
+        membership_id:
+          type: string
+          format: uuid
+        student_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+        invited_at:
+          type: string
+          format: date-time
+        responded_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    StudentSearchResult:
+      type: object
+      required: [id, display_name, email]
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        email:
+          type: string
+          format: email
+
+    ExerciseQuestion:
+      type: object
+      required: [index, description]
+      properties:
+        index:
+          type: integer
+          minimum: 0
+        description:
+          type: string
+        starter_code:
+          type: string
+          nullable: true
+
+    TeacherExercise:
+      type: object
+      required: [id, title, topic, difficulty, target_module, questions, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        topic:
+          type: string
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        target_module:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseQuestion'
+          minItems: 1
+        created_at:
+          type: string
+          format: date-time
+
+    GuardrailRejection:
+      type: object
+      required: [code, message, missing]
+      properties:
+        code:
+          type: string
+          enum: [PROMPT_INVALID, NOT_PYTHON_TOPIC]
+        message:
+          type: string
+          description: Human-readable explanation for the teacher
+        missing:
+          type: array
+          items:
+            type: string
+            enum: [topic, difficulty, module]
+          description: List of missing required prompt elements (empty for NOT_PYTHON_TOPIC)
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+paths:
+  /classes:
+    post:
+      summary: Create a new class
+      description: Creates a new named class owned by the authenticated teacher.
+      operationId: createClass
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Python Basics — Monday Group"
+      responses:
+        "201":
+          description: Class created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Class'
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "403":
+          description: Forbidden (not a teacher)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: List teacher's classes
+      description: Returns all classes owned by the authenticated teacher, ordered by created_at desc.
+      operationId: listClasses
+      responses:
+        "200":
+          description: List of classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Class'
+        "401":
+          description: Unauthorized
+
+  /classes/{class_id}:
+    get:
+      summary: Class detail with member list
+      description: Returns class info plus all memberships (pending, accepted, declined).
+      operationId: getClassDetail
+      parameters:
+        - name: class_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Class detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassDetail'
+        "403":
+          description: Teacher does not own this class
+        "404":
+          description: Class not found
+
+  /students/search:
+    get:
+      summary: Search for students by name or email
+      description: |
+        Returns users with `role=student` whose display_name or email contains the query string (case-insensitive).
+        Minimum query length: 2 characters.
+        Maximum results returned: 20.
+      operationId: searchStudents
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+          example: "sarah"
+      responses:
+        "200":
+          description: Matching students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentSearchResult'
+                maxItems: 20
+        "400":
+          description: Query too short (< 2 chars)
+
+  /classes/{class_id}/invitations:
+    post:
+      summary: Invite a student to a class
+      description: |
+        Creates a pending ClassMembership for the student.
+        Returns 409 if the student is already invited or is already an accepted member.
+      operationId: inviteStudent
+      parameters:
+        - name: class_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [student_id]
+              properties:
+                student_id:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Invitation sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassMember'
+        "403":
+          description: Teacher does not own this class
+        "404":
+          description: Class or student not found
+        "409":
+          description: Student already invited or is a member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /exercises/generate:
+    post:
+      summary: Generate a teacher exercise
+      description: |
+        Validates the prompt (guardrail), then invokes the Exercise Agent to generate
+        a multi-question exercise. Returns structured exercise data for preview.
+
+        If the prompt fails guardrail validation, returns 400 with `GuardrailRejection`.
+        If the Exercise Agent is unavailable, returns 503.
+      operationId: generateExercise
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt:
+                  type: string
+                  minLength: 10
+                  maxLength: 2000
+                  example: "Create 3 beginner-level questions on Python for loops (Module 2: Control Flow). Include starter code for each."
+      responses:
+        "200":
+          description: Exercise generated and persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherExercise'
+        "400":
+          description: Prompt failed guardrail validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuardrailRejection'
+        "503":
+          description: Exercise Agent temporarily unavailable
+
+  /exercises/{exercise_id}/assign:
+    post:
+      summary: Assign a generated exercise to a class
+      description: |
+        Creates a ClassExercise record linking the exercise to the class.
+        All students with `status=accepted` in that class receive the exercise in their Assigned tab.
+
+        Returns 409 if the exercise is already assigned to the same class.
+        Returns 200 with warning if the class has no accepted members.
+      operationId: assignExercise
+      parameters:
+        - name: exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [class_id]
+              properties:
+                class_id:
+                  type: string
+                  format: uuid
+      responses:
+        "201":
+          description: Exercise assigned
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [class_exercise_id, assigned_to_count]
+                properties:
+                  class_exercise_id:
+                    type: string
+                    format: uuid
+                  assigned_to_count:
+                    type: integer
+                    description: Number of accepted students who will receive the exercise
+                  warning:
+                    type: string
+                    nullable: true
+                    description: Non-null if class has no accepted members
+        "403":
+          description: Teacher does not own this class or exercise
+        "404":
+          description: Exercise or class not found
+        "409":
+          description: Exercise already assigned to this class
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

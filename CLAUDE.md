@@ -324,6 +324,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Neon PostgreSQL — new `quiz_sessions` table (JSONB `questions`, `student_answers`, `grades`); existing `mastery_records` table updated on submit (016-quiz-system)
 - Python 3.11+ (backend) · TypeScript 5+ / React 19 (frontend) (017-enhanced-dashboard)
 - Neon PostgreSQL — new `mastery_snapshots` table; all other reads from existing `user_module_mastery`, `modules` (017-enhanced-dashboard)
+- Python 3.13 (backend), TypeScript 5+ / React 19 (frontend) + FastAPI, openai-agents ≥0.13, SQLAlchemy 2.0+, Pydantic 2.0+, Alembic 1.13+, Next.js 14+, Tailwind CSS, Better Auth, Monaco Editor (reuse from F14) (018-teacher-dashboard)
+- Neon PostgreSQL — five new tables: `classes`, `class_memberships`, `class_exercises`, `teacher_generated_exercises`, `class_exercise_submissions`, `question_reviews`, `teacher_notifications` (018-teacher-dashboard)
 
 ## Recent Changes
 

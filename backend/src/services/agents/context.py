@@ -36,4 +36,5 @@ class LearnFlowContext:
     agent_mode: Optional[Literal["recommendations", "module_detail"]] = None
     module_slug: Optional[str] = None
     mastery_context: Optional[str] = None
+    question_description: Optional[str] = None
     extra: dict[str, Any] = field(default_factory=dict)

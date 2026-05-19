@@ -597,7 +597,7 @@ Detailed analytics on class performance, individual student progress, and topic 
 - FastAPI (analytics API)
 
 **Pages:**
-- `/teacher/analytics`
+- `/teacher/dashboard`
 
 ---
 

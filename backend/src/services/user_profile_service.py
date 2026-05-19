@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 
 import bcrypt
-from sqlalchemy import delete, func, select
+from sqlalchemy import cast, delete, func, select, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user import User, UserProfile
@@ -208,7 +208,7 @@ class UserProfileService:
         # Build query
         query = select(User).where(User.deleted_at.is_(None))
         if role:
-            query = query.where(User.role == role)
+            query = query.where(cast(User.role, String) == role)
 
         # Get total count
         count_query = select(func.count()).select_from(query.subquery())

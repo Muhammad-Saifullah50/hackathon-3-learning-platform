@@ -1,0 +1,386 @@
+openapi: "3.1.0"
+info:
+  title: LearnFlow Student Classes API
+  description: |
+    Student-facing endpoints for class invitations, assigned exercises, and exercise submission.
+    All endpoints require `role=student`. Authorization enforced via `require_role(['student'])`.
+  version: "1.0.0"
+
+servers:
+  - url: /api/v1/student/classes
+    description: Student classes API base path
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    PendingInvitation:
+      type: object
+      required: [invitation_id, class_id, class_name, teacher_name, invited_at]
+      properties:
+        invitation_id:
+          type: string
+          format: uuid
+        class_id:
+          type: string
+          format: uuid
+        class_name:
+          type: string
+        teacher_name:
+          type: string
+        invited_at:
+          type: string
+          format: date-time
+
+    AcceptedClass:
+      type: object
+      required: [class_id, class_name, teacher_name, joined_at]
+      properties:
+        class_id:
+          type: string
+          format: uuid
+        class_name:
+          type: string
+        teacher_name:
+          type: string
+        joined_at:
+          type: string
+          format: date-time
+
+    AssignedExerciseSummary:
+      type: object
+      required: [class_exercise_id, exercise_title, class_name, topic, difficulty, assigned_at, status]
+      properties:
+        class_exercise_id:
+          type: string
+          format: uuid
+        exercise_title:
+          type: string
+        class_name:
+          type: string
+          description: Originating class name for labelling in the Assigned tab
+        topic:
+          type: string
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        assigned_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [in_progress, submitted]
+        overall_score:
+          type: number
+          nullable: true
+          description: Non-null only after submission
+
+    ExerciseQuestion:
+      type: object
+      required: [index, description]
+      properties:
+        index:
+          type: integer
+          minimum: 0
+        description:
+          type: string
+        starter_code:
+          type: string
+          nullable: true
+
+    QuestionReviewResult:
+      type: object
+      required: [question_index, ai_review, grade]
+      properties:
+        question_index:
+          type: integer
+        ai_review:
+          type: string
+        grade:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    AssignedExerciseDetail:
+      type: object
+      required: [class_exercise_id, exercise_title, class_name, topic, difficulty, questions, submission_status, reviews]
+      properties:
+        class_exercise_id:
+          type: string
+          format: uuid
+        exercise_title:
+          type: string
+        class_name:
+          type: string
+        topic:
+          type: string
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExerciseQuestion'
+          minItems: 1
+        submission_status:
+          type: string
+          enum: [in_progress, submitted]
+        overall_score:
+          type: number
+          nullable: true
+        reviews:
+          type: array
+          description: AI reviews obtained so far (empty if no questions reviewed yet)
+          items:
+            $ref: '#/components/schemas/QuestionReviewResult'
+
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+
+paths:
+  /invitations:
+    get:
+      summary: List pending class invitations
+      description: Returns all invitations with status=pending for the authenticated student.
+      operationId: listInvitations
+      responses:
+        "200":
+          description: Pending invitations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PendingInvitation'
+        "401":
+          description: Unauthorized
+
+  /invitations/{invitation_id}:
+    patch:
+      summary: Accept or decline a class invitation
+      description: |
+        Updates the ClassMembership status to `accepted` or `declined`.
+        Sets `responded_at` to the current timestamp.
+        Returns 404 if the invitation does not belong to the authenticated student.
+        Returns 409 if already responded.
+      operationId: respondToInvitation
+      parameters:
+        - name: invitation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [accept, decline]
+      responses:
+        "200":
+          description: Invitation response recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [invitation_id, status]
+                properties:
+                  invitation_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [accepted, declined]
+        "404":
+          description: Invitation not found or does not belong to student
+        "409":
+          description: Invitation already responded to
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /memberships:
+    get:
+      summary: List student's accepted class memberships
+      description: |
+        Returns all classes the student has accepted, with teacher names.
+        Used to display class info on the student dashboard.
+      operationId: listMemberships
+      responses:
+        "200":
+          description: Accepted class memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AcceptedClass'
+
+  /assigned-exercises:
+    get:
+      summary: List all assigned exercises
+      description: |
+        Returns all exercises assigned to any class the student has accepted membership in.
+        Exercises from all classes appear in a flat list, each labelled with its class name.
+        Ordered by assigned_at desc.
+      operationId: listAssignedExercises
+      responses:
+        "200":
+          description: Assigned exercises
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssignedExerciseSummary'
+
+  /assigned-exercises/{class_exercise_id}:
+    get:
+      summary: Get exercise detail for completion
+      description: |
+        Returns the full exercise with all questions, current submission status,
+        and any AI reviews already obtained in prior sessions.
+        Returns 403 if student is not an accepted member of the exercise's class.
+        Returns 404 if class_exercise_id not found.
+      operationId: getAssignedExerciseDetail
+      parameters:
+        - name: class_exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Exercise detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignedExerciseDetail'
+        "403":
+          description: Student is not a member of this exercise's class
+        "404":
+          description: Exercise not found
+
+  /assigned-exercises/{class_exercise_id}/review:
+    post:
+      summary: Get AI review for a single question
+      description: |
+        Sends the student's code for one question to the Code Review Agent.
+        Persists the review in `question_reviews` (upsert: replaces prior review for same question_index).
+        Returns the AI review and grade.
+        Returns 403 if exercise is already submitted (no re-review after submission).
+      operationId: reviewQuestion
+      parameters:
+        - name: class_exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question_index, student_code]
+              properties:
+                question_index:
+                  type: integer
+                  minimum: 0
+                student_code:
+                  type: string
+                  minLength: 1
+      responses:
+        "200":
+          description: AI review result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionReviewResult'
+        "403":
+          description: Exercise already submitted or student not a member
+        "404":
+          description: Exercise not found or question_index out of range
+        "503":
+          description: Code Review Agent temporarily unavailable
+
+  /assigned-exercises/{class_exercise_id}/submit:
+    post:
+      summary: Submit exercise
+      description: |
+        Finalises the student's submission for the exercise.
+        Precondition: all questions must have a QuestionReview in `question_reviews`.
+        Calculates overall_score as the mean of all question grades.
+        Creates a TeacherNotification record.
+        Returns 400 if not all questions have been reviewed.
+        Returns 409 if already submitted.
+      operationId: submitExercise
+      parameters:
+        - name: class_exercise_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Submission recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [submission_id, overall_score, submitted_at]
+                properties:
+                  submission_id:
+                    type: string
+                    format: uuid
+                  overall_score:
+                    type: number
+                    minimum: 0
+                    maximum: 100
+                  submitted_at:
+                    type: string
+                    format: date-time
+        "400":
+          description: Not all questions reviewed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [detail, unreviewed_questions]
+                properties:
+                  detail:
+                    type: string
+                  unreviewed_questions:
+                    type: array
+                    items:
+                      type: integer
+                    description: Indices of questions not yet reviewed
+        "403":
+          description: Student is not a member of this exercise's class
+        "409":
+          description: Exercise already submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

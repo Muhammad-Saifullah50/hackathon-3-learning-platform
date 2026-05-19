@@ -193,11 +193,19 @@ def get_code_review_agent() -> Agent[LearnFlowContext]:
         code_context = ""
         if context.context.code_snippet:
             code_context = f"\n\nCode to review:\n```python\n{context.context.code_snippet}\n```"
+        question_context = ""
+        if context.context.question_description:
+            question_context = f"\n\nExercise question: {context.context.question_description}"
         return (
-            f"{base} Always start with positive reinforcement. "
-            "Provide structured feedback covering correctness, PEP 8 style violations, "
-            "efficiency, and readability. Identify any style issues yourself as if you ran a linter."
-            f"{code_context}"
+            f"{base}{question_context}{code_context}\n\n"
+            "INSTRUCTIONS:\n"
+            "1. Call run_static_analysis with the code to get PEP 8 violations.\n"
+            "2. After receiving tool results, evaluate the code for correctness, style, efficiency, and readability.\n"
+            "3. Assign a realistic score: 90-100 = excellent; 70-89 = good with minor issues; "
+            "50-69 = works but needs improvement; 20-49 = significant issues; 0-19 = non-functional.\n"
+            "4. Write a concise summary (2-4 sentences) covering what the code does well and what to improve.\n"
+            "5. NEVER set score=0 unless the code is completely non-functional or empty.\n"
+            "6. Always start with positive reinforcement."
         )
 
     return Agent(
