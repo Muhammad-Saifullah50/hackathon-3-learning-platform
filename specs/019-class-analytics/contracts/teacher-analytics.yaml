@@ -1,0 +1,218 @@
+openapi: "3.1.0"
+info:
+  title: Teacher Analytics API
+  version: "1.0.0"
+  description: Read-only analytics endpoint for the teacher dashboard (F019).
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local dev
+
+paths:
+  /dashboard/teacher/analytics:
+    get:
+      operationId: getTeacherAnalytics
+      summary: Get teacher analytics summary
+      description: |
+        Returns aggregated analytics across all platform students.
+        Requires authentication. Caller must have role = 'teacher' or 'admin'.
+
+        Scope note (F019): No class filtering — aggregates all students platform-wide.
+        Class filtering will be added when class-management (F018) is implemented.
+      tags:
+        - Dashboard
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Analytics data loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeacherAnalyticsResponse"
+              example:
+                total_students: 24
+                avg_mastery: 61.4
+                low_quiz_count: 3
+                module_mastery:
+                  - module_slug: basics
+                    module_name: Basics
+                    avg_score: 78.0
+                  - module_slug: control_flow
+                    module_name: Control Flow
+                    avg_score: 65.2
+                  - module_slug: data_structures
+                    module_name: Data Structures
+                    avg_score: 58.0
+                  - module_slug: functions
+                    module_name: Functions
+                    avg_score: 52.1
+                  - module_slug: oop
+                    module_name: OOP
+                    avg_score: 44.3
+                  - module_slug: files
+                    module_name: Files
+                    avg_score: 38.0
+                  - module_slug: errors
+                    module_name: Errors
+                    avg_score: 33.7
+                  - module_slug: libraries
+                    module_name: Libraries
+                    avg_score: 22.0
+                struggling_students:
+                  - student_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    display_name: Alex Kim
+                    score: 42.0
+                    module_slug: control_flow
+                    topic_label: For Loops
+                  - student_id: "4ab92f64-5717-4562-b3fc-2c963f66afa7"
+                    display_name: Sam Patel
+                    score: 38.5
+                    module_slug: oop
+                    topic_label: Inheritance
+        "401":
+          description: Missing or invalid authentication token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Not authenticated"
+        "403":
+          description: Authenticated user is not a teacher or admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                detail: "Insufficient permissions"
+        "500":
+          description: Unexpected server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TeacherAnalyticsResponse:
+      type: object
+      required:
+        - total_students
+        - avg_mastery
+        - low_quiz_count
+        - module_mastery
+        - struggling_students
+      properties:
+        total_students:
+          type: integer
+          minimum: 0
+          description: Count of all users with role='student'
+          example: 24
+        avg_mastery:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0
+          maximum: 100
+          description: |
+            Average mastery score across all student-module records.
+            Null when no mastery records exist yet.
+          example: 61.4
+        low_quiz_count:
+          type: integer
+          minimum: 0
+          description: |
+            Count of students whose most recent completed quiz score is below 50%.
+          example: 3
+        module_mastery:
+          type: array
+          description: Average mastery per module, ordered by module ID (curriculum order).
+          items:
+            $ref: "#/components/schemas/ModuleMasteryItem"
+        struggling_students:
+          type: array
+          description: |
+            Students whose most recent completed quiz score is below 50%.
+            Ordered by score ascending (worst first).
+          items:
+            $ref: "#/components/schemas/StrugglingStudent"
+
+    ModuleMasteryItem:
+      type: object
+      required:
+        - module_slug
+        - module_name
+        - avg_score
+      properties:
+        module_slug:
+          type: string
+          enum:
+            - basics
+            - control_flow
+            - data_structures
+            - functions
+            - oop
+            - files
+            - errors
+            - libraries
+          example: basics
+        module_name:
+          type: string
+          description: Human-readable module label from the modules table.
+          example: Basics
+        avg_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Average mastery score (0.0 when no records exist for this module).
+          example: 78.0
+
+    StrugglingStudent:
+      type: object
+      required:
+        - student_id
+        - display_name
+        - score
+        - module_slug
+        - topic_label
+      properties:
+        student_id:
+          type: string
+          format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        display_name:
+          type: string
+          description: Student's display name from the users table.
+          example: Alex Kim
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 49.99
+          description: Score from their most recent completed quiz. Always < 50.
+          example: 42.0
+        module_slug:
+          type: string
+          description: Module the quiz was about.
+          example: control_flow
+        topic_label:
+          type: string
+          description: Topic label from the quiz session.
+          example: For Loops
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          example: "Not authenticated"

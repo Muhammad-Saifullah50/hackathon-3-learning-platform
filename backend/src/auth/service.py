@@ -169,16 +169,6 @@ class AuthService:
                 detail="Invalid email or password",
             )
 
-        # Check email verification for teachers and admins
-        if user.role in ["teacher", "admin"] and user.email_verified_at is None:
-            logger.warning(
-                f"Login failed - email not verified for user_id: {user.id}, email: {email}"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Email verification required. Please verify your email address before logging in.",
-            )
-
         # Reset rate limit counters on successful login
         self.rate_limiter.reset_counter(email)
         if ip_address:

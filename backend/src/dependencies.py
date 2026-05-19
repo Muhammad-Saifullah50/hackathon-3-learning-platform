@@ -18,6 +18,7 @@ from src.repositories import (
     UserStreakRepository,
 )
 from src.repositories.agent_session_repository import AgentSessionRepository
+from src.repositories.analytics_repository import AnalyticsRepository
 from src.repositories.code_session_repository import CodeSessionRepository
 from src.repositories.exercise_repository import ExerciseRepository
 from src.repositories.mastery_repository import MasteryRepository
@@ -156,3 +157,8 @@ async def get_mastery_snapshot_repository(
 def get_chat_quota_service() -> ChatQuotaService:
     """Get ChatQuotaService instance."""
     return ChatQuotaService()
+
+
+async def get_analytics_repository(db: AsyncSession = Depends(get_db)) -> AnalyticsRepository:
+    """Get AnalyticsRepository instance."""
+    return AnalyticsRepository(db)

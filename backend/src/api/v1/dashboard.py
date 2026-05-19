@@ -10,11 +10,18 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from src.auth.dependencies import get_current_user
-from src.dependencies import get_db, get_mastery_repository
+from src.dependencies import get_analytics_repository, get_db, get_mastery_repository
 from src.models import User
+from src.repositories.analytics_repository import AnalyticsRepository
 from src.repositories.mastery_repository import MasteryRepository
 from src.repositories.mastery_snapshot_repository import MasterySnapshotRepository
-from src.schemas.dashboard import MasteryHistoryResponse, MasterySnapshot
+from src.schemas.dashboard import (
+    MasteryHistoryResponse,
+    MasterySnapshot,
+    ModuleMasteryItem,
+    StrugglingStudent,
+    TeacherAnalyticsResponse,
+)
 from src.services import dashboard_service
 
 logger = logging.getLogger(__name__)
@@ -98,4 +105,37 @@ async def stream_module_progress(
         dashboard_service.module_progress_generator(moduleId, current_user, mastery_repo, db),
         media_type="text/event-stream",
         headers=SSE_HEADERS,
+    )
+
+
+@router.get(
+    "/teacher/analytics",
+    response_model=TeacherAnalyticsResponse,
+    summary="Get teacher analytics overview",
+    description=(
+        "Returns live class analytics for teacher/admin users: total students, "
+        "average mastery, struggling student count, per-module mastery breakdown, "
+        "and list of students whose most recent completed quiz score is below 50%."
+    ),
+)
+async def get_teacher_analytics(
+    current_user: User = Depends(get_current_user),
+    analytics_repo: AnalyticsRepository = Depends(get_analytics_repository),
+) -> TeacherAnalyticsResponse:
+    if current_user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=403, detail="Teacher or admin role required.")
+
+    teacher_id = current_user.id
+    total_students = await analytics_repo.get_total_students(teacher_id)
+    avg_mastery = await analytics_repo.get_avg_mastery(teacher_id)
+    low_quiz_count = await analytics_repo.get_low_quiz_count(teacher_id)
+    module_rows = await analytics_repo.get_module_mastery_breakdown(teacher_id)
+    struggling_rows = await analytics_repo.get_struggling_students(teacher_id)
+
+    return TeacherAnalyticsResponse(
+        total_students=total_students,
+        avg_mastery=avg_mastery,
+        low_quiz_count=low_quiz_count,
+        module_mastery=[ModuleMasteryItem(**row) for row in module_rows],
+        struggling_students=[StrugglingStudent(**row) for row in struggling_rows],
     )
