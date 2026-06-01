@@ -16,6 +16,7 @@ from src.api.v1.dashboard import module_router, router as dashboard_router
 from src.api.v1.quiz import router as quiz_router
 from src.api.v1.code_execution import router as code_execution_router
 from src.api.v1.llm import router as llm_router
+from src.api.v1.teacher import router as teacher_router
 from src.auth.routes import router as auth_router
 from src.config import settings
 from src.logging_config import setup_logging
@@ -109,3 +110,6 @@ app.include_router(quiz_router, tags=["Quiz"])
 # Include dashboard routes (F017)
 app.include_router(dashboard_router, prefix="/api/v1", tags=["Dashboard"])
 app.include_router(module_router, prefix="/api/v1", tags=["Dashboard"])
+
+# Include teacher routes (F019)
+app.include_router(teacher_router)
