@@ -1,5 +1,6 @@
 import html
 import logging
+import os
 import time
 import uuid
 from collections import defaultdict
@@ -109,7 +110,11 @@ class CodeExecutionService:
     """Service class to handle code execution business logic."""
 
     def __init__(self, submission_repo: SubmissionRepository):
-        self.sandbox = DockerSandbox()
+        if os.getenv("VERCEL") == "1":
+            from ..services.sandbox.vercel_sandbox import VercelSandbox
+            self.sandbox = VercelSandbox()
+        else:
+            self.sandbox = DockerSandbox()
         self.error_parser = ErrorParser()
         self.submission_repo = submission_repo
         self.metrics = _metrics

@@ -21,6 +21,7 @@ dependencies = [
     "pydantic-settings>=2.1.0",
     "email-validator>=2.1.0",
     "docker>=7.1.0",
+    "vercel>=0.1.0",
     "openai-agents[litellm]>=0.17.2",
 ]
 
