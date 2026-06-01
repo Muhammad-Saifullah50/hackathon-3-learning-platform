@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Resiliency
 metadata:
-  name: learnflow-resiliency
+  name: learnpybyai-resiliency
   namespace: default
 spec:
   policies:
@@ -85,13 +85,13 @@ spec:
 
     # Component targets (pub/sub, state store)
     components:
-      learnflow-pubsub:
+      learnpybyai-pubsub:
         outbound:
           timeout: general
           retry: pubsubRetry
           circuitBreaker: pubsubCB
 
-      learnflow-statestore:
+      learnpybyai-statestore:
         outbound:
           timeout: fast
           retry: general

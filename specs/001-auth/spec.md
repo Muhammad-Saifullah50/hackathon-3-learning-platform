@@ -9,7 +9,7 @@
 
 ### User Story 1 - New User Registration (Priority: P1)
 
-A new user (student, teacher, or admin) needs to create an account to access the LearnFlow platform. The system collects their email, password, and role, validates the input, and creates a verified account.
+A new user (student, teacher, or admin) needs to create an account to access the LearnPyByAI platform. The system collects their email, password, and role, validates the input, and creates a verified account.
 
 **Why this priority**: Registration is the entry point to the platform. Without it, no other features are accessible. This is the foundation of user identity.
 

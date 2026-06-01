@@ -1,6 +1,6 @@
 ---
 id: 001
-title: Create LearnFlow Constitution
+title: Create LearnPyByAI Constitution
 stage: constitution
 date: 2026-03-14
 surface: agent
@@ -9,7 +9,7 @@ feature: none
 branch: master
 user: Muhammad-Saifullah50
 command: /sp.constitution
-labels: ["constitution", "governance", "standards", "learnflow"]
+labels: ["constitution", "governance", "standards", "learnpybyai"]
 links:
   spec: null
   ticket: null
@@ -247,7 +247,7 @@ Push / PR →
 
 ## Response snapshot
 
-Created comprehensive LearnFlow Constitution v1.0.0 with 7 core principles:
+Created comprehensive LearnPyByAI Constitution v1.0.0 with 7 core principles:
 
 1. **Code Quality Standards** - Automated formatting (black/prettier), naming conventions, documentation requirements
 2. **Testing Principles** - Coverage targets (80% routes, 85% DB, 65% React), TDD approach, LLM contract tests
@@ -265,7 +265,7 @@ All templates verified for alignment - no updates needed.
 
 ## Outcome
 
-- ✅ Impact: Created foundational governance document defining all engineering standards for LearnFlow project
+- ✅ Impact: Created foundational governance document defining all engineering standards for LearnPyByAI project
 - 🧪 Tests: N/A (documentation only)
 - 📁 Files: Created .specify/memory/constitution.md (v1.0.0)
 - 🔁 Next prompts: Begin feature specification with /sp.specify, or create first ADR for LLM provider abstraction

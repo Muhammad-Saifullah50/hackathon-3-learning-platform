@@ -1,19 +1,19 @@
 openapi: 3.1.0
 info:
-  title: LearnFlow Authentication API
+  title: LearnPyByAI Authentication API
   version: 1.0.0
   description: |
-    Authentication and authorization API for LearnFlow platform.
+    Authentication and authorization API for LearnPyByAI platform.
     Provides user registration, login, JWT token management, password reset,
     email verification, and role-based access control.
   contact:
-    name: LearnFlow API Team
-    email: api@learnflow.dev
+    name: LearnPyByAI API Team
+    email: api@learnpybyai.dev
 
 servers:
   - url: http://localhost:8000
     description: Local development
-  - url: https://api.learnflow.dev
+  - url: https://api.learnpybyai.dev
     description: Production
 
 tags:

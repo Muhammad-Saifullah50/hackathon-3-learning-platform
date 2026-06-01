@@ -4,12 +4,12 @@ info:
   description: API endpoints for user profile management (view, update profile and preferences)
   version: 1.0.0
   contact:
-    name: LearnFlow API Team
+    name: LearnPyByAI API Team
 
 servers:
   - url: http://localhost:8000
     description: Local development server
-  - url: https://api.learnflow.dev
+  - url: https://api.learnpybyai.dev
     description: Production server
 
 security:

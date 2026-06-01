@@ -1,4 +1,4 @@
-# Kubernetes Service Manifest Template for LearnFlow Microservices
+# Kubernetes Service Manifest Template for LearnPyByAI Microservices
 # This template shows the structure for deploying services with Dapr sidecars
 
 apiVersion: v1
@@ -41,7 +41,7 @@ spec:
         dapr.io/app-id: "<APP_ID>"
         dapr.io/app-port: "8000"
         dapr.io/app-protocol: "http"
-        dapr.io/config: "learnflow-config"
+        dapr.io/config: "learnpybyai-config"
         dapr.io/log-level: "info"
         dapr.io/enable-metrics: "true"
         dapr.io/metrics-port: "9090"

@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document captures all technical research and decisions for implementing the LearnFlow database schema. Each section resolves a "NEEDS CLARIFICATION" item from the Technical Context or addresses a key implementation question.
+This document captures all technical research and decisions for implementing the LearnPyByAI database schema. Each section resolves a "NEEDS CLARIFICATION" item from the Technical Context or addresses a key implementation question.
 
 ---
 
@@ -420,7 +420,7 @@ from sqlalchemy.pool import NullPool
 @pytest.fixture(scope="function")
 async def db_engine():
     engine = create_async_engine(
-        "postgresql+asyncpg://test:test@localhost/test_learnflow",
+        "postgresql+asyncpg://test:test@localhost/test_learnpybyai",
         poolclass=NullPool,  # Disable pooling for tests
         echo=False
     )

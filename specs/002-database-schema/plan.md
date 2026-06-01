@@ -7,7 +7,7 @@
 
 ## Summary
 
-Design and implement the complete PostgreSQL schema for LearnFlow's core data model including users, curriculum structure (8 Python modules with lessons and exercises), student progress tracking, code submissions, quiz attempts, mastery calculations, and LLM response caching. This feature extends the existing F01 authentication schema with role-based user profiles and creates the foundational data layer for all AI tutoring agents to track student learning journeys.
+Design and implement the complete PostgreSQL schema for LearnPyByAI's core data model including users, curriculum structure (8 Python modules with lessons and exercises), student progress tracking, code submissions, quiz attempts, mastery calculations, and LLM response caching. This feature extends the existing F01 authentication schema with role-based user profiles and creates the foundational data layer for all AI tutoring agents to track student learning journeys.
 
 ## Technical Context
 

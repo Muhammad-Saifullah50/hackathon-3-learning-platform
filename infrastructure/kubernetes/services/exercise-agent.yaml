@@ -38,14 +38,14 @@ spec:
         dapr.io/app-id: "exercise-agent"
         dapr.io/app-port: "8000"
         dapr.io/app-protocol: "http"
-        dapr.io/config: "learnflow-config"
+        dapr.io/config: "learnpybyai-config"
         dapr.io/log-level: "info"
         dapr.io/enable-metrics: "true"
         dapr.io/metrics-port: "9090"
     spec:
       containers:
       - name: exercise-agent
-        image: learnflow/exercise-agent:latest
+        image: learnpybyai/exercise-agent:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000

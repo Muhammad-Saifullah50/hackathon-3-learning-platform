@@ -4,7 +4,7 @@ metadata:
   name: quiz-completed-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: quiz-completed
   routes:
     default: /webhooks/quiz-completed

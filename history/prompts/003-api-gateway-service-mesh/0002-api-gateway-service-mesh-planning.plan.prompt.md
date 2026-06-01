@@ -60,7 +60,7 @@ Successfully completed planning workflow for API Gateway & Service Mesh Setup (0
 - Created data-model.md defining Kong and Dapr configuration entities:
   - Kong: Service, Route, Consumer, JWT Credential, Plugin, Upstream, Target
   - Dapr: Component, Subscription, Configuration, Resiliency, Sidecar Annotations
-  - LearnFlow topology: 11 microservices, 4 pub/sub topics, service invocation patterns
+  - LearnPyByAI topology: 11 microservices, 4 pub/sub topics, service invocation patterns
 - Generated API contracts in /contracts/ directory:
   - kong-configuration.yaml: Declarative config for all services, routes, plugins
   - dapr-components.yaml: Redis pub/sub and state store components

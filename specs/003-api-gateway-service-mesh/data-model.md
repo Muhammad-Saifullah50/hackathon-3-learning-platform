@@ -47,7 +47,7 @@ Defines how requests are routed to services.
 - `name` (string) - Route name (e.g., "auth-login")
 - `paths` (array[string]) - URL paths (e.g., ["/api/auth/login"])
 - `methods` (array[string]) - HTTP methods (e.g., ["GET", "POST"])
-- `hosts` (array[string]) - Hostnames (e.g., ["api.learnflow.local"])
+- `hosts` (array[string]) - Hostnames (e.g., ["api.learnpybyai.local"])
 - `strip_path` (boolean) - Strip matched path before forwarding (default: false)
 - `preserve_host` (boolean) - Preserve original Host header (default: false)
 - `protocols` (array[string]) - Protocols: http, https, grpc, grpcs
@@ -72,7 +72,7 @@ Represents an authenticated API consumer.
 
 **Attributes:**
 - `id` (UUID) - Unique identifier
-- `username` (string) - Consumer username (e.g., "learnflow-auth")
+- `username` (string) - Consumer username (e.g., "learnpybyai-auth")
 - `custom_id` (string) - External system identifier
 - `tags` (array[string]) - Tags for organization
 
@@ -93,7 +93,7 @@ JWT authentication credential for a consumer.
 **Attributes:**
 - `id` (UUID) - Unique identifier
 - `consumer` (object) - Reference to Consumer entity
-- `key` (string) - JWT issuer identifier (e.g., "learnflow-jwt-issuer")
+- `key` (string) - JWT issuer identifier (e.g., "learnpybyai-jwt-issuer")
 - `algorithm` (enum) - Algorithm: HS256, HS384, HS512, RS256, RS384, RS512, ES256, ES384, ES512
 - `rsa_public_key` (string) - RSA public key (PEM format)
 - `secret` (string) - HMAC secret (for HS* algorithms)
@@ -160,7 +160,7 @@ fault_tolerant: true
 
 #### CORS Plugin Config
 ```yaml
-allowed_origins: ["http://localhost:3000", "https://learnflow.com"]
+allowed_origins: ["http://localhost:3000", "https://learnpybyai.com"]
 allowed_methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
 allowed_headers: ["Content-Type", "Authorization"]
 credentials: true
@@ -249,7 +249,7 @@ Dapr building block component (pub/sub, state store, bindings, etc.).
 **Attributes:**
 - `apiVersion` (string) - API version: "dapr.io/v1alpha1"
 - `kind` (string) - Kind: "Component"
-- `metadata.name` (string) - Component name (e.g., "learnflow-pubsub")
+- `metadata.name` (string) - Component name (e.g., "learnpybyai-pubsub")
 - `metadata.namespace` (string) - Kubernetes namespace
 - `spec.type` (string) - Component type (e.g., "pubsub.redis")
 - `spec.version` (string) - Component version (e.g., "v1")
@@ -398,7 +398,7 @@ annotations:
 
 ---
 
-## 3. LearnFlow Service Topology
+## 3. LearnPyByAI Service Topology
 
 ### 3.1 Microservices
 
@@ -503,7 +503,7 @@ Dapr Configuration:
   Configuration (1) ──< (N) Pod Annotation
   Subscription (N) ──> (1) Component
 
-LearnFlow Topology:
+LearnPyByAI Topology:
   Kong Route (1) ──> (1) Microservice
   Microservice (1) ──> (1) Dapr Sidecar
   Microservice (N) ──> (N) Pub/Sub Topic
@@ -526,7 +526,7 @@ LearnFlow Topology:
 - App IDs must not contain dots
 - Resiliency policies must have valid durations
 
-**LearnFlow Services:**
+**LearnPyByAI Services:**
 - All services must expose `/health` endpoint
 - All services must listen on port 8000
 - All services must have Dapr sidecar enabled
@@ -536,4 +536,4 @@ LearnFlow Topology:
 
 ## Summary
 
-This data model defines the configuration entities for Kong API Gateway and Dapr service mesh, including their attributes, relationships, and validation rules. The model supports the LearnFlow platform's 11 microservices with secure routing, rate limiting, service invocation, and pub/sub messaging.
+This data model defines the configuration entities for Kong API Gateway and Dapr service mesh, including their attributes, relationships, and validation rules. The model supports the LearnPyByAI platform's 11 microservices with secure routing, rate limiting, service invocation, and pub/sub messaging.

@@ -1,6 +1,6 @@
-# LearnFlow Feature Breakdown
+# LearnPyByAI Feature Breakdown
 
-This document breaks down the LearnFlow platform into isolated, buildable features following SpecKit Plus methodology. Each feature can be developed independently with clear boundaries and dependencies.
+This document breaks down the LearnPyByAI platform into isolated, buildable features following SpecKit Plus methodology. Each feature can be developed independently with clear boundaries and dependencies.
 
 ---
 

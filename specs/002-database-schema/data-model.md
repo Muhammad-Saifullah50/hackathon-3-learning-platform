@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document defines the complete database schema for LearnFlow, including all entities, relationships, constraints, and indexes. The schema extends the existing F01 authentication tables and adds curriculum structure, progress tracking, code submissions, and LLM caching.
+This document defines the complete database schema for LearnPyByAI, including all entities, relationships, constraints, and indexes. The schema extends the existing F01 authentication tables and adds curriculum structure, progress tracking, code submissions, and LLM caching.
 
 ---
 

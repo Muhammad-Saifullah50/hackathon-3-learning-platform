@@ -134,11 +134,11 @@ frontend/src/
 
 ---
 
-### AD-3: Progress Agent mode switching via `LearnFlowContext`
+### AD-3: Progress Agent mode switching via `LearnPyByAIContext`
 
 **Context**: The Progress Agent already understands student mastery. Two new tasks (recommendations + module detail) can be served by the same agent with different system prompts.
 
-**Decision**: Add `agent_mode: Literal["recommendations", "module_detail"] | None` to `LearnFlowContext`. Progress Agent `dynamic_instructions` branches on this field.
+**Decision**: Add `agent_mode: Literal["recommendations", "module_detail"] | None` to `LearnPyByAIContext`. Progress Agent `dynamic_instructions` branches on this field.
 
 **Trade-off**: Makes the Progress Agent more complex but avoids introducing a new agent type. Both modes share the same output validation and error handling.
 
@@ -153,14 +153,14 @@ frontend/src/
 3. **Snapshot read**: Create `MasterySnapshotRepository` with `get_daily_averages(user_id)` query
 4. **Pydantic schemas**: `MasteryHistoryResponse`, `RecommendationItem`, `TopicProgressItem` in `src/schemas/dashboard.py`
 5. **Prompts**: Add `get_recommendations_prompt(mastery_context)` and `get_module_detail_prompt(module_slug, mastery_context)` to `src/llm/prompts.py`
-6. **Context extension**: Add `agent_mode`, `module_slug` to `LearnFlowContext`
+6. **Context extension**: Add `agent_mode`, `module_slug` to `LearnPyByAIContext`
 7. **Agent extension**: Branch `get_progress_agent().dynamic_instructions` on `agent_mode`
 
 ### Phase 2 — New Dashboard Endpoints
 
 8. **`GET /api/v1/dashboard/mastery-history`**: Query `MasterySnapshotRepository`, return `MasteryHistoryResponse`
-9. **`GET /api/v1/dashboard/recommendations/stream`**: Build `LearnFlowContext(agent_mode="recommendations")`, run Progress Agent, stream SSE
-10. **`GET /api/v1/module/{moduleId}/progress/stream`**: Validate slug, build `LearnFlowContext(agent_mode="module_detail", module_slug=...)`, run Progress Agent, stream SSE; return 404 for unknown slug
+9. **`GET /api/v1/dashboard/recommendations/stream`**: Build `LearnPyByAIContext(agent_mode="recommendations")`, run Progress Agent, stream SSE
+10. **`GET /api/v1/module/{moduleId}/progress/stream`**: Validate slug, build `LearnPyByAIContext(agent_mode="module_detail", module_slug=...)`, run Progress Agent, stream SSE; return 404 for unknown slug
 11. **Router registration**: Mount `dashboard.router` in `src/main.py`
 12. **Dependency**: Register `get_mastery_snapshot_repository` in `src/dependencies.py`
 

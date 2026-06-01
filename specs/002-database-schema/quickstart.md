@@ -2,11 +2,11 @@
 
 **Feature**: 002-database-schema
 **Date**: 2026-03-15
-**Audience**: Developers setting up the LearnFlow database
+**Audience**: Developers setting up the LearnPyByAI database
 
 ## Overview
 
-This guide walks you through setting up the LearnFlow PostgreSQL database schema, running migrations, and verifying the installation. The schema includes user management, curriculum structure, progress tracking, code submissions, and LLM caching.
+This guide walks you through setting up the LearnPyByAI PostgreSQL database schema, running migrations, and verifying the installation. The schema includes user management, curriculum structure, progress tracking, code submissions, and LLM caching.
 
 ---
 
@@ -40,13 +40,13 @@ Create or update `backend/.env`:
 
 ```bash
 # Database Configuration
-DATABASE_URL=postgresql+asyncpg://user:password@host:5432/learnflow
+DATABASE_URL=postgresql+asyncpg://user:password@host:5432/learnpybyai
 
 # For Neon PostgreSQL (recommended)
-DATABASE_URL=postgresql+asyncpg://user:password@ep-xxx.us-east-2.aws.neon.tech/learnflow?sslmode=require
+DATABASE_URL=postgresql+asyncpg://user:password@ep-xxx.us-east-2.aws.neon.tech/learnpybyai?sslmode=require
 
 # For local PostgreSQL
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/learnflow_dev
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/learnpybyai_dev
 ```
 
 **Security Note**: Never commit `.env` to version control. It's already in `.gitignore`.

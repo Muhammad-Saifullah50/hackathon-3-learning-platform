@@ -12,15 +12,15 @@ from src.services.agents.agents import (
     get_progress_agent,
     get_triage_agent,
 )
-from src.services.agents.context import LearnFlowContext
+from src.services.agents.context import LearnPyByAIContext
 
 
-class TestLearnFlowContext:
+class TestLearnPyByAIContext:
     """Tests for the SDK context object."""
 
     def test_minimal_context(self):
         user_id = uuid.uuid4()
-        ctx = LearnFlowContext(user_id=user_id)
+        ctx = LearnPyByAIContext(user_id=user_id)
         assert ctx.user_id == user_id
         assert ctx.session_id is None
         assert ctx.db is None
@@ -32,7 +32,7 @@ class TestLearnFlowContext:
     def test_full_context(self):
         user_id = uuid.uuid4()
         session_id = uuid.uuid4()
-        ctx = LearnFlowContext(
+        ctx = LearnPyByAIContext(
             user_id=user_id,
             session_id=session_id,
             topic="loops",

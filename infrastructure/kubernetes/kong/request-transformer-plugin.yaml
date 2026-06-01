@@ -1,4 +1,4 @@
-# Kong Request Transformer Plugin Configuration for LearnFlow
+# Kong Request Transformer Plugin Configuration for LearnPyByAI
 # Extracts JWT claims and forwards them as headers to backend services
 
 apiVersion: configuration.konghq.com/v1

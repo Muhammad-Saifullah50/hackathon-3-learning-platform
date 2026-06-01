@@ -86,10 +86,10 @@ The frontend `ModuleCard` receives `id` (currently the module slug). The `module
 ## 5. Progress Agent Extension Strategy
 
 ### Finding
-`get_progress_agent()` in `agents.py` uses a single `dynamic_instructions` function that reads `LearnFlowContext`. The context currently has: `user_id`, `level`, `topic`, `code_snippet`, `surface`.
+`get_progress_agent()` in `agents.py` uses a single `dynamic_instructions` function that reads `LearnPyByAIContext`. The context currently has: `user_id`, `level`, `topic`, `code_snippet`, `surface`.
 
 ### Decision
-Add two new fields to `LearnFlowContext`:
+Add two new fields to `LearnPyByAIContext`:
 - `agent_mode: Literal["recommendations", "module_detail"] | None` — selects the agent's task
 - `module_slug: str | None` — set for `module_detail` mode
 

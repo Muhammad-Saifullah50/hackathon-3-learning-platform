@@ -98,7 +98,7 @@ Used by `GET /api/v1/module/{moduleId}/progress/stream` to resolve slug → modu
 
 ---
 
-## LearnFlowContext Extension
+## LearnPyByAIContext Extension
 
 Two new optional fields added to `src/services/agents/context.py`:
 
@@ -138,6 +138,6 @@ export interface Recommendation {
 | Change | Type | Impact |
 |---|---|---|
 | Add `mastery_snapshots` | New table | Requires Alembic migration |
-| Extend `LearnFlowContext` | Backend dataclass | Non-breaking, optional fields |
+| Extend `LearnPyByAIContext` | Backend dataclass | Non-breaking, optional fields |
 | Add `agent_mode`, `module_slug` | New fields | Backward-compatible |
 | Add frontend types | TS interfaces | Non-breaking |

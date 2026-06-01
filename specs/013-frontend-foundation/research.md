@@ -177,7 +177,7 @@ export const { signIn, signOut, signUp, useSession } = authClient
 | Body / UI | `Outfit` (geometric sans) | `--font-sans` |
 | Code | `JetBrains Mono` | `--font-mono` |
 
-### Color Palette (LearnFlow — Warm Code Scholar)
+### Color Palette (LearnPyByAI — Warm Code Scholar)
 | Token | Light (HSL) | Dark (HSL) | Usage |
 |-------|-------------|------------|-------|
 | `--background` | `40 30% 98%` (warm white) | `220 20% 7%` (near-black) | Page bg |

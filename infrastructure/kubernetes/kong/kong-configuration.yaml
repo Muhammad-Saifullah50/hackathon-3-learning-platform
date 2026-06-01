@@ -1,20 +1,20 @@
-# Kong Declarative Configuration for LearnFlow Platform
+# Kong Declarative Configuration for LearnPyByAI Platform
 # Format: Kong 3.x Declarative Config (deck)
 # Date: 2026-03-15
 
 _format_version: "3.0"
 _info:
-  title: LearnFlow API Gateway Configuration
+  title: LearnPyByAI API Gateway Configuration
   version: 1.0.0
-  description: Kong configuration for LearnFlow multi-agent tutoring platform
+  description: Kong configuration for LearnPyByAI multi-agent tutoring platform
 
 # ============================================================================
 # CONSUMERS
 # ============================================================================
 
 consumers:
-- username: learnflow-auth
-  custom_id: learnflow-auth-system
+- username: learnpybyai-auth
+  custom_id: learnpybyai-auth-system
   tags:
     - auth
     - system
@@ -24,8 +24,8 @@ consumers:
 # ============================================================================
 
 jwt_secrets:
-- consumer: learnflow-auth
-  key: learnflow-jwt-issuer
+- consumer: learnpybyai-auth
+  key: learnpybyai-jwt-issuer
   algorithm: RS256
   rsa_public_key: |
     -----BEGIN PUBLIC KEY-----
@@ -524,8 +524,8 @@ plugins:
     allowed_origins:
       - http://localhost:3000
       - http://localhost:3001
-      - https://learnflow.com
-      - https://app.learnflow.com
+      - https://learnpybyai.com
+      - https://app.learnpybyai.com
     allowed_methods:
       - GET
       - POST

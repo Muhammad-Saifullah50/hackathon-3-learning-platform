@@ -1,4 +1,4 @@
-# Kong Rate Limiting Plugin Configuration for LearnFlow
+# Kong Rate Limiting Plugin Configuration for LearnPyByAI
 # Enforces rate limits per authenticated consumer using Redis backend
 
 apiVersion: configuration.konghq.com/v1

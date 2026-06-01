@@ -1,10 +1,10 @@
 openapi: 3.1.0
 info:
-  title: LearnFlow Agent API
-  description: AI tutoring agent endpoints for the LearnFlow platform
+  title: LearnPyByAI Agent API
+  description: AI tutoring agent endpoints for the LearnPyByAI platform
   version: 1.0.0
   contact:
-    name: LearnFlow Team
+    name: LearnPyByAI Team
 
 servers:
   - url: http://localhost:8000

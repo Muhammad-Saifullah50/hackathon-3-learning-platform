@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: LearnFlow Code Execution API
+  title: LearnPyByAI Code Execution API
   description: API for executing Python code in a secure sandbox environment
   version: 1.0.0
 paths:

@@ -1,4 +1,4 @@
-# Troubleshooting Guide for LearnFlow Infrastructure
+# Troubleshooting Guide for LearnPyByAI Infrastructure
 
 ## Overview
 
@@ -118,7 +118,7 @@ kubectl port-forward -n kong svc/kong-kong-admin 8001:8001
 kubectl get secret kong-jwt-public-key -n kong
 
 # Check JWT consumer
-curl http://localhost:8001/consumers/learnflow-auth/jwt | jq
+curl http://localhost:8001/consumers/learnpybyai-auth/jwt | jq
 ```
 
 **Solutions**:
@@ -274,7 +274,7 @@ kubectl get subscriptions -n default
 
 # Check Redis streams
 kubectl exec -n default redis-master-0 -- \
-  redis-cli -a changeme KEYS "learnflow-pubsub-*"
+  redis-cli -a changeme KEYS "learnpybyai-pubsub-*"
 
 # Check subscriber logs
 kubectl logs <subscriber-pod> -c daprd --tail=50 | grep "pubsub"
@@ -296,11 +296,11 @@ kubectl logs <subscriber-pod> -c daprd --tail=50 | grep "pubsub"
    ```bash
    # Check dead letter queue
    kubectl exec -n default redis-master-0 -- \
-     redis-cli -a changeme XLEN "learnflow-pubsub-<topic>-deadletter"
+     redis-cli -a changeme XLEN "learnpybyai-pubsub-<topic>-deadletter"
 
    # Read dead letter messages
    kubectl exec -n default redis-master-0 -- \
-     redis-cli -a changeme XREAD COUNT 10 STREAMS "learnflow-pubsub-<topic>-deadletter" 0
+     redis-cli -a changeme XREAD COUNT 10 STREAMS "learnpybyai-pubsub-<topic>-deadletter" 0
    ```
 
 ### Issue: Dapr components not loading
@@ -315,7 +315,7 @@ kubectl logs <subscriber-pod> -c daprd --tail=50 | grep "pubsub"
 kubectl get components -n default
 
 # Check component details
-kubectl describe component learnflow-pubsub
+kubectl describe component learnpybyai-pubsub
 ```
 
 **Solutions**:

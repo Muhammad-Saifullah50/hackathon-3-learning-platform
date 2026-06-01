@@ -285,4 +285,4 @@ Run `/sp.tasks` to generate actionable tasks from this plan. Expected task break
 - [Quickstart Guide](./quickstart.md)
 - [F01 Authentication](../001-auth/)
 - [F02 Database Schema](../002-database-schema/)
-- [LearnFlow Constitution](../../.specify/memory/constitution.md)
+- [LearnPyByAI Constitution](../../.specify/memory/constitution.md)

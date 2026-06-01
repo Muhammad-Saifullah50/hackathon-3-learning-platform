@@ -1,4 +1,4 @@
-# Dapr Subscriptions Configuration for LearnFlow Platform
+# Dapr Subscriptions Configuration for LearnPyByAI Platform
 # Date: 2026-03-15
 
 # ============================================================================
@@ -11,7 +11,7 @@ metadata:
   name: struggle-alerts-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: struggle-alerts
   routes:
     default: /webhooks/struggle-alert
@@ -33,7 +33,7 @@ metadata:
   name: quiz-completed-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: quiz-completed
   routes:
     default: /webhooks/quiz-completed
@@ -55,7 +55,7 @@ metadata:
   name: code-submitted-review-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: code-submitted
   routes:
     default: /webhooks/code-submitted
@@ -73,7 +73,7 @@ metadata:
   name: code-submitted-progress-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: code-submitted
   routes:
     default: /webhooks/code-submitted
@@ -95,7 +95,7 @@ metadata:
   name: mastery-updated-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: mastery-updated
   routes:
     default: /webhooks/mastery-updated
@@ -117,7 +117,7 @@ metadata:
   name: dlq-handler-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: struggle-alerts-deadletter
   routes:
     default: /webhooks/dead-letter
@@ -134,7 +134,7 @@ metadata:
   name: dlq-quiz-handler-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: quiz-completed-deadletter
   routes:
     default: /webhooks/dead-letter
@@ -151,7 +151,7 @@ metadata:
   name: dlq-code-handler-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: code-submitted-deadletter
   routes:
     default: /webhooks/dead-letter
@@ -168,7 +168,7 @@ metadata:
   name: dlq-mastery-handler-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: mastery-updated-deadletter
   routes:
     default: /webhooks/dead-letter

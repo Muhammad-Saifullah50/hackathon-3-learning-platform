@@ -4,7 +4,7 @@ import pytest
 
 from src.schemas.agent_responses import ConceptResponse
 from src.services.agents.agents import get_concepts_agent
-from src.services.agents.context import LearnFlowContext
+from src.services.agents.context import LearnPyByAIContext
 
 
 class TestConceptsAgent:

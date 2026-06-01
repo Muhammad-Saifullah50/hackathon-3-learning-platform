@@ -56,7 +56,7 @@
   - Short-circuit with canned SSE response when `triage_result.intent == 'off_topic'` (no specialist agent, no `output_type`)
   - Set `session.title` on first message (first 60 chars, word-boundary trim) if currently NULL
   - Emit SSE events in order: `event: session`, `event: quota` (remaining count), `event: handoff`, progressive text `data:` tokens, `event: structured` with `result.final_output.model_dump_json()`, `data: [DONE]`
-  - Pass `execution_output` from request into `LearnFlowContext` for Debug Agent
+  - Pass `execution_output` from request into `LearnPyByAIContext` for Debug Agent
   - Store structured JSON (not raw text) as AI message in `conversation_history`
 - [X] T012 [P] [US1] Add `GET /api/v1/agents/sessions` endpoint to `backend/src/api/v1/agents.py` — calls `session_repo.list_sessions()`, returns `list[ChatSessionListItem]`, honours `?limit` (max 50, default 20)
 - [X] T013 [P] [US1] Add `GET /api/v1/agents/sessions/{session_id}` endpoint to `backend/src/api/v1/agents.py` — returns `ChatSessionDetail` with full `conversation_history`; 403 if session belongs to another user

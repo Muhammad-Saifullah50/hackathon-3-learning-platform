@@ -2,11 +2,11 @@
 
 ## Overview
 
-This document describes the Kong API Gateway setup for the LearnFlow platform, including deployment, configuration, and troubleshooting.
+This document describes the Kong API Gateway setup for the LearnPyByAI platform, including deployment, configuration, and troubleshooting.
 
 ## Architecture
 
-Kong acts as the API Gateway for all LearnFlow microservices, providing:
+Kong acts as the API Gateway for all LearnPyByAI microservices, providing:
 - JWT authentication
 - Rate limiting
 - CORS handling
@@ -90,7 +90,7 @@ Key configurations:
 #### CORS
 - **File**: `infrastructure/kubernetes/kong/cors-plugin.yaml`
 - **Purpose**: Enables cross-origin requests from frontend
-- **Allowed origins**: `http://localhost:3000`, `https://learnflow.com`
+- **Allowed origins**: `http://localhost:3000`, `https://learnpybyai.com`
 - **Credentials**: Enabled
 
 #### Rate Limiting
@@ -199,7 +199,7 @@ kubectl get secret kong-jwt-public-key -n kong
 
 # Check Kong JWT consumer
 kubectl port-forward -n kong svc/kong-kong-admin 8001:8001
-curl http://localhost:8001/consumers/learnflow-auth/jwt
+curl http://localhost:8001/consumers/learnpybyai-auth/jwt
 
 # Test with valid token
 curl -H "Authorization: Bearer <token>" http://localhost:8000/api/users/me

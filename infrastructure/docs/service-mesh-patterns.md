@@ -1,8 +1,8 @@
-# Service Mesh Patterns for LearnFlow
+# Service Mesh Patterns for LearnPyByAI
 
 ## Overview
 
-This document describes common service mesh patterns used in the LearnFlow platform with Kong API Gateway and Dapr service mesh.
+This document describes common service mesh patterns used in the LearnPyByAI platform with Kong API Gateway and Dapr service mesh.
 
 ## Pattern 1: API Gateway Pattern
 
@@ -25,7 +25,7 @@ Client → Kong Gateway → Backend Service
 ```bash
 # Client request
 curl -H "Authorization: Bearer <jwt-token>" \
-  https://api.learnflow.com/api/users/me
+  https://api.learnpybyai.com/api/users/me
 
 # Kong validates JWT and forwards to user-service with headers:
 # X-User-Id: user-123
@@ -99,7 +99,7 @@ from dapr.clients import DaprClient
 
 with DaprClient() as client:
     client.publish_event(
-        pubsub_name="learnflow-pubsub",
+        pubsub_name="learnpybyai-pubsub",
         topic_name="code-submitted",
         data={
             "student_id": "123",
@@ -258,7 +258,7 @@ kind: Subscription
 metadata:
   name: struggle-alerts-subscription
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: struggle-alerts
   routes:
     default: /webhooks/struggle-alert
@@ -271,11 +271,11 @@ spec:
 ```bash
 # Check dead letter queue
 kubectl exec -n default redis-master-0 -- \
-  redis-cli -a changeme XLEN "learnflow-pubsub-struggle-alerts-deadletter"
+  redis-cli -a changeme XLEN "learnpybyai-pubsub-struggle-alerts-deadletter"
 
 # Read dead letter messages
 kubectl exec -n default redis-master-0 -- \
-  redis-cli -a changeme XREAD COUNT 10 STREAMS "learnflow-pubsub-struggle-alerts-deadletter" 0
+  redis-cli -a changeme XREAD COUNT 10 STREAMS "learnpybyai-pubsub-struggle-alerts-deadletter" 0
 ```
 
 ### Benefits

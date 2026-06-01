@@ -1,4 +1,4 @@
-# Redis Helm Chart Values for LearnFlow
+# Redis Helm Chart Values for LearnPyByAI
 # Used by Kong (rate limiting) and Dapr (pub/sub, state store)
 
 architecture: standalone

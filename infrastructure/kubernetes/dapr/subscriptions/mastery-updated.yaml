@@ -4,7 +4,7 @@ metadata:
   name: mastery-updated-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: mastery-updated
   routes:
     default: /webhooks/mastery-updated

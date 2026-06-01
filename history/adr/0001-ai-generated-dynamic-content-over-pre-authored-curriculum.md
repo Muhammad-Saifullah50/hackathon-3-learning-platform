@@ -6,7 +6,7 @@
 
 ## Context
 
-The initial design of LearnFlow assumed a traditional e-learning model where curriculum authors write lesson content, exercises, and quiz questions in advance and store them in the database. F02 seeded 8 Python modules with structured `Lesson`, `Exercise`, and `Quiz` records containing pre-authored content.
+The initial design of LearnPyByAI assumed a traditional e-learning model where curriculum authors write lesson content, exercises, and quiz questions in advance and store them in the database. F02 seeded 8 Python modules with structured `Lesson`, `Exercise`, and `Quiz` records containing pre-authored content.
 
 During feature 15 (Chat Interface) planning, a fundamental product decision was made: the platform's AI agents are capable of generating pedagogically sound, personalized content on demand. Pre-authoring content introduces a bottleneck (content must be written before it can be taught), creates a static experience that cannot adapt to individual student context, and duplicates effort already handled by the agent layer.
 

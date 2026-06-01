@@ -58,7 +58,7 @@
 
 - [X] T016 [P] [US1] Create Kong JWT plugin configuration in infrastructure/kubernetes/kong/jwt-plugin.yaml with key_claim_name="iss", claims_to_verify=["exp"], header_names=["Authorization"]
 - [X] T017 [P] [US1] Create Kong Request Transformer plugin configuration in infrastructure/kubernetes/kong/request-transformer-plugin.yaml to extract JWT claims (X-User-Id, X-User-Email, X-User-Role, X-Session-Id)
-- [X] T018 [P] [US1] Create Kong CORS plugin configuration in infrastructure/kubernetes/kong/cors-plugin.yaml with allowed_origins=[localhost:3000, learnflow.com], credentials=true
+- [X] T018 [P] [US1] Create Kong CORS plugin configuration in infrastructure/kubernetes/kong/cors-plugin.yaml with allowed_origins=[localhost:3000, learnpybyai.com], credentials=true
 - [X] T019 [US1] Copy Kong declarative configuration from specs/003-api-gateway-service-mesh/contracts/kong-configuration.yaml to infrastructure/kubernetes/kong/kong-configuration.yaml
 - [X] T020 [US1] Update kong-configuration.yaml to replace JWT public key placeholder with actual key from Kubernetes secret
 - [X] T021 [US1] Create Kong configuration sync script in infrastructure/scripts/sync-kong-config.sh using deck CLI to apply kong-configuration.yaml

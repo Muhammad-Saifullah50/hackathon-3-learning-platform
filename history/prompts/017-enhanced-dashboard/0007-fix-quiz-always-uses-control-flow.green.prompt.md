@@ -36,7 +36,7 @@ why does this always quiz me on control flow
 
 Root cause: when user says "quiz me on this topic", the frontend sends no `topic` field to the backend. The backend passed `topic=None` to the quiz agent. With no topic hint, the LLM defaulted to `control_flow`.
 
-Fix in `backend/src/api/v1/agents.py`: when quiz agent is selected and `request.topic` is None, walk backwards through the session's conversation history to find the most recent previous user message and use it as the inferred topic context. That inferred topic is set in `LearnFlowContext` (used by the system prompt's `topic_hint`) AND appended to the agent input with a `[Context: ...]` annotation.
+Fix in `backend/src/api/v1/agents.py`: when quiz agent is selected and `request.topic` is None, walk backwards through the session's conversation history to find the most recent previous user message and use it as the inferred topic context. That inferred topic is set in `LearnPyByAIContext` (used by the system prompt's `topic_hint`) AND appended to the agent input with a `[Context: ...]` annotation.
 
 ## Outcome
 

@@ -44,8 +44,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 # Create FastAPI app
 app = FastAPI(
-    title="LearnFlow Authentication API",
-    description="Authentication and authorization service for LearnFlow platform",
+    title="LearnPyByAI Authentication API",
+    description="Authentication and authorization service for LearnPyByAI platform",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -70,7 +70,7 @@ logger.info(f"Application starting - environment: {settings.ENVIRONMENT}")
 async def root():
     """Root endpoint."""
     return {
-        "message": "LearnFlow Authentication API",
+        "message": "LearnPyByAI Authentication API",
         "version": "1.0.0",
         "docs": "/api/docs",
     }

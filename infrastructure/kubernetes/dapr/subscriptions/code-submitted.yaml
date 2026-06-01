@@ -5,7 +5,7 @@ metadata:
   name: code-submitted-review-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: code-submitted
   routes:
     default: /webhooks/code-submitted
@@ -24,7 +24,7 @@ metadata:
   name: code-submitted-progress-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: code-submitted
   routes:
     default: /webhooks/code-submitted

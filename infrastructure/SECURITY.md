@@ -1,4 +1,4 @@
-# Security Guidelines for LearnFlow Infrastructure
+# Security Guidelines for LearnPyByAI Infrastructure
 
 ## Secrets Management
 

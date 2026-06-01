@@ -56,7 +56,7 @@ Implemented all 33 tasks for Feature 017 (Enhanced Student Dashboard & Module Pr
 
 **Phase 1 (T001)**: Created Alembic migration `20260518_add_mastery_snapshots.py` with UUID PK, user_id/module_id FKs, score float, recorded_at TIMESTAMPTZ, and two indexes. Migration applied successfully to Neon DB.
 
-**Phase 2 (T002-T005)**: Created `backend/src/schemas/dashboard.py` (MasteryHistoryResponse, MasterySnapshot, RecommendationItem, TopicProgressItem); extended LearnFlowContext with `agent_mode`, `module_slug`, `mastery_context`; added TS types to `frontend/src/types/index.ts`; created `backend/src/api/v1/dashboard.py` router + `module_router`, mounted both in `main.py`, registered `get_mastery_snapshot_repository` in `dependencies.py`.
+**Phase 2 (T002-T005)**: Created `backend/src/schemas/dashboard.py` (MasteryHistoryResponse, MasterySnapshot, RecommendationItem, TopicProgressItem); extended LearnPyByAIContext with `agent_mode`, `module_slug`, `mastery_context`; added TS types to `frontend/src/types/index.ts`; created `backend/src/api/v1/dashboard.py` router + `module_router`, mounted both in `main.py`, registered `get_mastery_snapshot_repository` in `dependencies.py`.
 
 **Phase 3 US1 (T006-T012)**: Created `MasterySnapshotRepository` with `insert_snapshot()` and `get_daily_averages()`; extended `ProgressRepository.update_mastery_score()` to insert snapshot as side-effect; implemented `GET /api/v1/dashboard/mastery-history`; created `mastery-timeline-chart.tsx` (Recharts LineChart, `next/dynamic`, SSR=false) and `module-mastery-chart.tsx` (BarChart vertical, band-coloured); integrated both into `dashboard-client.tsx` with error boundaries and SSR data fetch.
 

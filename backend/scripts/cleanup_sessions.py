@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Session cleanup script for LearnFlow authentication system.
+Session cleanup script for LearnPyByAI authentication system.
 
 This script removes expired sessions and revoked sessions older than 30 days.
 Should be run as a daily cron job.

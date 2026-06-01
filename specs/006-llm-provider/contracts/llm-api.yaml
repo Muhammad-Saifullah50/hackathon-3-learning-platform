@@ -6,7 +6,7 @@ info:
     Supports streaming responses via SSE, prompt caching, and model swapping via environment variables.
   version: "1.0.0"
   contact:
-    name: LearnFlow Team
+    name: LearnPyByAI Team
 
 servers:
   - url: http://localhost:8000

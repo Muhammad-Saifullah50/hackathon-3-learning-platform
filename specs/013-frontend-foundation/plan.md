@@ -7,7 +7,7 @@
 
 ## Summary
 
-Scaffold the LearnFlow Next.js 16 frontend from zero: project setup, design system (shadcn/ui + Tailwind + custom Fraunces/Outfit/JetBrains Mono typography), Better Auth session management proxied to the existing FastAPI backend, auth pages (login, register, forgot/reset password), student layout with sidebar, a fully data-driven Student Dashboard, and stub pages for chat/progress/quiz. The teacher role gets a "coming soon" placeholder. System-default dark/light mode with no flash. All dashboard data fetched server-side via React Server Components. Theme persisted in HTTP cookie. Fully responsive down to 768 px (hamburger drawer). Skeleton screens via React Suspense. WCAG 2.1 AA accessibility.
+Scaffold the LearnPyByAI Next.js 16 frontend from zero: project setup, design system (shadcn/ui + Tailwind + custom Fraunces/Outfit/JetBrains Mono typography), Better Auth session management proxied to the existing FastAPI backend, auth pages (login, register, forgot/reset password), student layout with sidebar, a fully data-driven Student Dashboard, and stub pages for chat/progress/quiz. The teacher role gets a "coming soon" placeholder. System-default dark/light mode with no flash. All dashboard data fetched server-side via React Server Components. Theme persisted in HTTP cookie. Fully responsive down to 768 px (hamburger drawer). Skeleton screens via React Suspense. WCAG 2.1 AA accessibility.
 
 ---
 
@@ -412,7 +412,7 @@ export function masteryLevel(score: number): MasteryLevel {
 
 ### Phase 5 — Landing Page (Task T148)
 
-**Goal**: A polished, conversion-focused public landing page at `/` that demonstrates the complete LearnFlow workflow to unauthenticated visitors and drives registrations.
+**Goal**: A polished, conversion-focused public landing page at `/` that demonstrates the complete LearnPyByAI workflow to unauthenticated visitors and drives registrations.
 
 **T148 — Landing page (`app/page.tsx` + components)**
 

@@ -63,8 +63,8 @@ from src.services.agents.agents import (
     get_triage_agent,
 )
 from src.services.agents.exercise import ExerciseService
-from src.services.agents.context import LearnFlowContext
-from src.services.agents.hooks import LearnFlowHooks
+from src.services.agents.context import LearnPyByAIContext
+from src.services.agents.hooks import LearnPyByAIHooks
 from src.services.agents.triage import classify_intent, get_agent_for_intent
 
 logger = logging.getLogger(__name__)
@@ -184,7 +184,7 @@ async def agent_chat(
     await session_repo.add_message_to_history(str(session_id), "user", request.message)
 
     # Build context and run agent
-    lf_ctx = LearnFlowContext(
+    lf_ctx = LearnPyByAIContext(
         user_id=current_user.id,
         session_id=session_id,
         db=db,
@@ -226,7 +226,7 @@ async def agent_chat(
         "quiz": get_quiz_agent,
     }
     selected_agent = _agent_factory_map.get(agent_name, get_triage_agent)()
-    hooks = LearnFlowHooks(
+    hooks = LearnPyByAIHooks(
         session_repo=session_repo,
         routing_repo=routing_repo,
         user_message=request.message,
@@ -415,7 +415,7 @@ async def generate_exercise(
     current_user: User = Depends(get_current_user),
 ):
     """Generate a coding exercise."""
-    lf_ctx = LearnFlowContext(
+    lf_ctx = LearnPyByAIContext(
         user_id=current_user.id,
         db=db,
         topic=request.topic,
@@ -637,7 +637,7 @@ async def concepts_explain(
 
     await session_repo.add_message_to_history(str(session_id), "user", request.question)
 
-    lf_ctx = LearnFlowContext(
+    lf_ctx = LearnPyByAIContext(
         user_id=current_user.id,
         session_id=session_id,
         db=db,
@@ -700,7 +700,7 @@ async def code_review_analyze(
     user_message = request.question or "Please review my code."
     await session_repo.add_message_to_history(str(session_id), "user", user_message)
 
-    lf_ctx = LearnFlowContext(
+    lf_ctx = LearnPyByAIContext(
         user_id=current_user.id,
         session_id=session_id,
         db=db,
@@ -765,7 +765,7 @@ async def debug_analyze(
     user_message = "\n".join(parts)
     await session_repo.add_message_to_history(str(session_id), "user", user_message)
 
-    lf_ctx = LearnFlowContext(
+    lf_ctx = LearnPyByAIContext(
         user_id=current_user.id,
         session_id=session_id,
         db=db,

@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document consolidates research findings for deploying Kong API Gateway and Dapr service mesh on Kubernetes (Minikube) for the LearnFlow platform.
+This document consolidates research findings for deploying Kong API Gateway and Dapr service mesh on Kubernetes (Minikube) for the LearnPyByAI platform.
 
 ---
 
@@ -114,7 +114,7 @@ request-transformer:
 
 **Key Configuration Details:**
 - Public key stored in Kubernetes Secret: `kong-jwt-public-key`
-- Kong Consumer created with username: `learnflow-auth`
+- Kong Consumer created with username: `learnpybyai-auth`
 - JWT credential configured with algorithm: `RS256`
 - Token refresh handled by auth-service (bypasses Kong JWT validation)
 
@@ -217,7 +217,7 @@ spec:
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: learnflow-pubsub
+  name: learnpybyai-pubsub
 spec:
   type: pubsub.redis
   version: v1
@@ -242,7 +242,7 @@ kind: Subscription
 metadata:
   name: struggle-alerts-subscription
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: struggle-alerts
   routes:
     default: /webhooks/struggle-alert
@@ -251,7 +251,7 @@ spec:
   - teacher-service
 ```
 
-**Pub/Sub Topics for LearnFlow:**
+**Pub/Sub Topics for LearnPyByAI:**
 
 | Topic | Publisher | Subscribers | Purpose |
 |-------|-----------|-------------|---------|
@@ -288,13 +288,13 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: learnflow-api
+  name: learnpybyai-api
   annotations:
     konghq.com/plugins: jwt-auth,rate-limit-consumer,cors-plugin
 spec:
   ingressClassName: kong
   rules:
-  - host: api.learnflow.local
+  - host: api.learnpybyai.local
     http:
       paths:
       - path: /api/auth
@@ -357,7 +357,7 @@ spec:
   config:
     allowed_origins:
     - "http://localhost:3000"      # Local development
-    - "https://learnflow.com"      # Production frontend
+    - "https://learnpybyai.com"      # Production frontend
     allowed_methods:
     - GET
     - POST

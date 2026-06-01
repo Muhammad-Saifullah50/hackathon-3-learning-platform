@@ -13,7 +13,7 @@
 **Chosen approach**: Docker-based sandbox with pre-built Python image and strict resource limits.
 
 ## Decision: Import Whitelist Strategy
-**Rationale**: Based on the LearnFlow curriculum structure and security requirements, we need a comprehensive whitelist of safe standard library modules.
+**Rationale**: Based on the LearnPyByAI curriculum structure and security requirements, we need a comprehensive whitelist of safe standard library modules.
 
 ### Safe Modules (Allowed)
 - **Core Language**: `builtins`, `__future__`, `keyword`, `token`, `tokenize`

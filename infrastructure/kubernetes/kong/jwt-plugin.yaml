@@ -1,4 +1,4 @@
-# Kong JWT Plugin Configuration for LearnFlow
+# Kong JWT Plugin Configuration for LearnPyByAI
 # Validates JWT tokens at the gateway level
 
 apiVersion: configuration.konghq.com/v1

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "LearnFlow JWT Claims Schema",
+  "title": "LearnPyByAI JWT Claims Schema",
   "description": "JWT claims schema for Kong API Gateway validation and downstream service authorization",
   "type": "object",
   "required": [

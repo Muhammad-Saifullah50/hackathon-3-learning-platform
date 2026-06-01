@@ -9,7 +9,7 @@ feature: none
 branch: master
 user: saifullah
 command: none
-labels: ["documentation", "product-overview", "learnflow", "setup"]
+labels: ["documentation", "product-overview", "learnpybyai", "setup"]
 links:
   spec: null
   ticket: null
@@ -28,7 +28,7 @@ LearnPyByAi is an AI-powered Python tutoring platform. This section provides the
 
 ## **Product Overview**
 
-LearnFlow helps students learn Python programming through conversational AI agents. Students can chat with tutors, write and run code, take quizzes, and track their progress. Teachers can monitor class performance and generate custom exercises.
+LearnPyByAI helps students learn Python programming through conversational AI agents. Students can chat with tutors, write and run code, take quizzes, and track their progress. Teachers can monitor class performance and generate custom exercises.
 
 | Role | Features |
 | ----- | ----- |
@@ -50,7 +50,7 @@ LearnFlow helps students learn Python programming through conversational AI agen
 
 ## **AI Agent System**
 
-LearnFlow uses a multi-agent architecture where specialized agents handle different aspects of tutoring.
+LearnPyByAI uses a multi-agent architecture where specialized agents handle different aspects of tutoring.
 
 | Agent | Purpose & Capabilities |
 | ----- | ----- |
@@ -93,7 +93,7 @@ Topic Mastery \= weighted average of:
 
 ## **Demo Scenario**
 
-This scenario demonstrates the key features of LearnFlow:
+This scenario demonstrates the key features of LearnPyByAI:
 
 1. **Student Maya** logs in → Dashboard shows: "Module 2: Loops \- 60% complete"
 2. Maya asks: *"How do for loops work in Python?"*
@@ -108,9 +108,9 @@ This scenario demonstrates the key features of LearnFlow:
 
 ## Response snapshot
 
-Updated CLAUDE.md file with comprehensive LearnFlow product context including:
+Updated CLAUDE.md file with comprehensive LearnPyByAI product context including:
 
-1. **Project Context** - Product name (LearnFlow/LearnPyByAi), domain (AI-powered Python tutoring), and core value proposition
+1. **Project Context** - Product name (LearnPyByAI/LearnPyByAi), domain (AI-powered Python tutoring), and core value proposition
 2. **User Roles & Capabilities** - Student features (chat, code execution, quizzes, progress) and Teacher features (monitoring, alerts, exercise generation)
 3. **Python Curriculum Structure** - All 8 modules: Basics, Control Flow, Data Structures, Functions, OOP, Files, Errors, Libraries
 4. **Multi-Agent Architecture** - 6 specialized agents:
@@ -129,15 +129,15 @@ Updated CLAUDE.md file with comprehensive LearnFlow product context including:
 
 ## Outcome
 
-- ✅ Impact: CLAUDE.md now contains complete LearnFlow product context for all future development work
+- ✅ Impact: CLAUDE.md now contains complete LearnPyByAI product context for all future development work
 - 🧪 Tests: None (documentation update)
 - 📁 Files: Updated CLAUDE.md with product overview section
 - 🔁 Next prompts: Ready for feature specification, architecture planning, or implementation tasks
-- 🧠 Reflection: Product context is now embedded in agent instructions, ensuring all future work aligns with LearnFlow requirements
+- 🧠 Reflection: Product context is now embedded in agent instructions, ensuring all future work aligns with LearnPyByAI requirements
 
 ## Evaluation notes (flywheel)
 
 - Failure modes observed: None
 - Graders run and results (PASS/FAIL): N/A (documentation task)
 - Prompt variant (if applicable): none
-- Next experiment (smallest change to try): Begin feature specification or architecture planning for LearnFlow platform
+- Next experiment (smallest change to try): Begin feature specification or architecture planning for LearnPyByAI platform

@@ -1,4 +1,4 @@
-"""SDK lifecycle hooks for LearnFlow agents.
+"""SDK lifecycle hooks for LearnPyByAI agents.
 
 RunHooks that persist conversation history to AgentSession and log
 routing decisions whenever a handoff occurs.
@@ -11,12 +11,12 @@ from agents import Agent, RunContextWrapper, RunHooks
 
 from src.repositories.agent_session_repository import AgentSessionRepository
 from src.repositories.routing_repository import RoutingRepository
-from src.services.agents.context import LearnFlowContext
+from src.services.agents.context import LearnPyByAIContext
 
 logger = logging.getLogger(__name__)
 
 
-class LearnFlowHooks(RunHooks):
+class LearnPyByAIHooks(RunHooks):
     """Hooks that persist agent runs to the database."""
 
     def __init__(
@@ -37,8 +37,8 @@ class LearnFlowHooks(RunHooks):
 
     async def on_agent_start(
         self,
-        context: RunContextWrapper[LearnFlowContext],
-        agent: Agent[LearnFlowContext],
+        context: RunContextWrapper[LearnPyByAIContext],
+        agent: Agent[LearnPyByAIContext],
     ) -> None:
         """Log which agent is starting to handle the request."""
         lf_ctx = context.context
@@ -51,9 +51,9 @@ class LearnFlowHooks(RunHooks):
 
     async def on_handoff(
         self,
-        context: RunContextWrapper[LearnFlowContext],
-        from_agent: Agent[LearnFlowContext],
-        to_agent: Agent[LearnFlowContext],
+        context: RunContextWrapper[LearnPyByAIContext],
+        from_agent: Agent[LearnPyByAIContext],
+        to_agent: Agent[LearnPyByAIContext],
     ) -> None:
         """Log a routing decision when control transfers between agents."""
         lf_ctx = context.context
@@ -75,8 +75,8 @@ class LearnFlowHooks(RunHooks):
 
     async def on_agent_end(
         self,
-        context: RunContextWrapper[LearnFlowContext],
-        agent: Agent[LearnFlowContext],
+        context: RunContextWrapper[LearnPyByAIContext],
+        agent: Agent[LearnPyByAIContext],
         output: Any,
     ) -> None:
         """Called when the agent produces its final output.

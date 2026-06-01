@@ -350,7 +350,7 @@ except Exception as e:
         try:
             # Find containers created by this sandbox that are older than max_age_minutes
             old_containers = self.client.containers.list(
-                filters={"label": "sandbox=learnflow"}, all=True
+                filters={"label": "sandbox=learnpybyai"}, all=True
             )
 
             import datetime

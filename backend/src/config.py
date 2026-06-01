@@ -1,7 +1,7 @@
 """Application configuration using Pydantic settings."""
 
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     PUBLIC_KEY_PATH: str = Field(
         default="keys/public_key.pem", description="Path to RSA public key"
     )
+    # RSA key contents (takes precedence over file paths — use for serverless/Vercel)
+    PRIVATE_KEY_CONTENT: Optional[str] = Field(default=None, description="RSA private key PEM content")
+    PUBLIC_KEY_CONTENT: Optional[str] = Field(default=None, description="RSA public key PEM content")
 
     # Email Configuration
     SMTP_HOST: str = Field(default="localhost", description="SMTP server host")
@@ -33,9 +36,9 @@ class Settings(BaseSettings):
     SMTP_USER: str = Field(default="", description="SMTP username")
     SMTP_PASSWORD: str = Field(default="", description="SMTP password")
     SMTP_FROM_EMAIL: str = Field(
-        default="noreply@learnflow.local", description="From email address"
+        default="noreply@learnpybyai.local", description="From email address"
     )
-    SMTP_FROM_NAME: str = Field(default="LearnFlow", description="From name")
+    SMTP_FROM_NAME: str = Field(default="LearnPyByAI", description="From name")
 
     # Frontend URL
     FRONTEND_URL: str = Field(
@@ -87,14 +90,18 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in v.split(",") if origin.strip()]
 
     def get_private_key(self) -> str:
-        """Load RSA private key from file."""
+        """Load RSA private key from env content or file."""
+        if self.PRIVATE_KEY_CONTENT:
+            return self.PRIVATE_KEY_CONTENT.replace("\\n", "\n")
         key_path = Path(self.PRIVATE_KEY_PATH)
         if not key_path.exists():
             raise FileNotFoundError(f"Private key not found at {key_path}")
         return key_path.read_text()
 
     def get_public_key(self) -> str:
-        """Load RSA public key from file."""
+        """Load RSA public key from env content or file."""
+        if self.PUBLIC_KEY_CONTENT:
+            return self.PUBLIC_KEY_CONTENT.replace("\\n", "\n")
         key_path = Path(self.PUBLIC_KEY_PATH)
         if not key_path.exists():
             raise FileNotFoundError(f"Public key not found at {key_path}")

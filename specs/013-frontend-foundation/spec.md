@@ -100,7 +100,7 @@ The application automatically adopts the student's operating system colour schem
 
 ### User Story 6 — Visitor Discovers the Platform via Landing Page (Priority: P2)
 
-A first-time visitor lands on the root URL (`/`) before signing in. They see a polished, full-featured marketing page that demonstrates the complete LearnFlow workflow end-to-end: the AI tutor conversation flow, the live code sandbox, the quiz and progress system, and the teacher monitoring experience. Compelling copy and clear CTAs lead them to register or log in.
+A first-time visitor lands on the root URL (`/`) before signing in. They see a polished, full-featured marketing page that demonstrates the complete LearnPyByAI workflow end-to-end: the AI tutor conversation flow, the live code sandbox, the quiz and progress system, and the teacher monitoring experience. Compelling copy and clear CTAs lead them to register or log in.
 
 **Why this priority**: The landing page is the product's first impression for every new user. It must immediately communicate the platform's value — AI-powered Python tutoring — and convert visitors into registered students. Without it the platform has no discoverable entry point beyond a raw `/login` URL.
 

@@ -120,9 +120,9 @@ All implemented endpoints are fully documented in the OpenAPI specification at:
 
 ### Production
 
-**Swagger UI**: https://api.learnflow.dev/api/docs
-**ReDoc**: https://api.learnflow.dev/api/redoc
-**OpenAPI JSON**: https://api.learnflow.dev/openapi.json
+**Swagger UI**: https://api.learnpybyai.dev/api/docs
+**ReDoc**: https://api.learnpybyai.dev/api/redoc
+**OpenAPI JSON**: https://api.learnpybyai.dev/openapi.json
 
 ---
 
@@ -398,4 +398,4 @@ The API documentation is **complete and comprehensive** with all 11 endpoints fu
 ---
 
 **Last Updated**: 2026-03-14
-**Maintained By**: LearnFlow API Team
+**Maintained By**: LearnPyByAI API Team

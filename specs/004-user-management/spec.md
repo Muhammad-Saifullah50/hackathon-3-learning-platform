@@ -9,7 +9,7 @@
 
 ### User Story 1 - View and Update Personal Profile (Priority: P1)
 
-A student or teacher logs into LearnFlow and wants to view their profile information and update their display name or bio to personalize their account.
+A student or teacher logs into LearnPyByAI and wants to view their profile information and update their display name or bio to personalize their account.
 
 **Why this priority**: Core user identity management. Every user needs to see and manage their basic profile information. This is foundational for personalization and user engagement.
 
@@ -43,7 +43,7 @@ A student wants to set their learning pace (slow/normal/fast) and difficulty lev
 
 ### User Story 3 - Delete Account (Priority: P2)
 
-A user wants to permanently delete their LearnFlow account and all associated data for privacy reasons (GDPR compliance).
+A user wants to permanently delete their LearnPyByAI account and all associated data for privacy reasons (GDPR compliance).
 
 **Why this priority**: Legal requirement (GDPR) but not needed for core learning functionality. Important for compliance but lower priority than active learning features.
 

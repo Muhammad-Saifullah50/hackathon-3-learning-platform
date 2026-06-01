@@ -165,7 +165,7 @@ def parse_error_line(stderr: str) -> int | None:
 ### 3. Auto-Save Strategy (FR-007, FR-008, FR-009)
 
 Two-tier persistence:
-1. **localStorage** (fast, local): debounced 5s after last keystroke — key: `learnflow:code:{userId}:{contextKey}`
+1. **localStorage** (fast, local): debounced 5s after last keystroke — key: `learnpybyai:code:{userId}:{contextKey}`
 2. **Backend** (cross-device): on every Run/Submit/Review action — PUT `/api/v1/code-sessions/{contextKey}`
 
 On editor load:

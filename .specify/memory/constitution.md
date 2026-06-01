@@ -1,4 +1,4 @@
-# LearnFlow Constitution
+# LearnPyByAI Constitution
 
 <!--
 Sync Impact Report:

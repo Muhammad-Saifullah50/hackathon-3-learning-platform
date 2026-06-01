@@ -27,7 +27,7 @@ now that you have the clauide.md and constiituion, use the agentsmd gen skill to
 
 ## Response snapshot
 
-Generated comprehensive AGENTS.md file following the AAIF (Agentic AI Foundation) standard for the LearnFlow project. The file includes:
+Generated comprehensive AGENTS.md file following the AAIF (Agentic AI Foundation) standard for the LearnPyByAI project. The file includes:
 
 - Build & Development Commands (with planned stack notation)
 - Code Style (Python: black/isort, TypeScript: prettier/eslint)
@@ -45,7 +45,7 @@ The AGENTS.md extracts all critical conventions from constitution.md and CLAUDE.
 
 ## Outcome
 
-- ✅ Impact: Created AAIF-compliant AGENTS.md that serves as authoritative guide for AI agents working on LearnFlow
+- ✅ Impact: Created AAIF-compliant AGENTS.md that serves as authoritative guide for AI agents working on LearnPyByAI
 - 🧪 Tests: No tests required (documentation artifact)
 - 📁 Files: Created AGENTS.md (comprehensive agent instructions)
 - 🔁 Next prompts: Begin feature development using spec-driven workflow (/sp.specify for first feature)

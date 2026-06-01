@@ -53,7 +53,7 @@ Create `backend/.env`:
 
 ```bash
 # Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/learnflow_dev
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/learnpybyai_dev
 
 # JWT Configuration (RS256)
 JWT_PRIVATE_KEY_PATH=./keys/jwt_private.pem
@@ -68,12 +68,12 @@ SMTP_HOST=localhost
 SMTP_PORT=1025
 SMTP_USER=
 SMTP_PASSWORD=
-EMAIL_FROM=noreply@learnflow.dev
+EMAIL_FROM=noreply@learnpybyai.dev
 
 # Email Configuration (Production - SendGrid)
 # EMAIL_BACKEND=sendgrid
 # SENDGRID_API_KEY=your_sendgrid_api_key
-# EMAIL_FROM=noreply@learnflow.dev
+# EMAIL_FROM=noreply@learnpybyai.dev
 
 # HaveIBeenPwned API
 HIBP_API_URL=https://api.pwnedpasswords.com/range
@@ -115,10 +115,10 @@ cd ../..
 
 ```bash
 # Create database
-createdb learnflow_dev
+createdb learnpybyai_dev
 
 # Or using psql
-psql -U postgres -c "CREATE DATABASE learnflow_dev;"
+psql -U postgres -c "CREATE DATABASE learnpybyai_dev;"
 ```
 
 ### 7. Run Migrations
@@ -381,7 +381,7 @@ yarn test:e2e
 ### View Database Tables
 
 ```bash
-psql -U postgres -d learnflow_dev
+psql -U postgres -d learnpybyai_dev
 
 # List tables
 \dt
@@ -400,8 +400,8 @@ SELECT id, user_id, created_at, expires_at, revoked_at FROM sessions;
 
 ```bash
 # Drop and recreate database
-dropdb learnflow_dev
-createdb learnflow_dev
+dropdb learnpybyai_dev
+createdb learnpybyai_dev
 
 # Run migrations
 cd backend/
@@ -432,7 +432,7 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 **Solution**: Create the database:
 ```bash
-createdb learnflow_dev
+createdb learnpybyai_dev
 cd backend/
 alembic upgrade head
 ```
@@ -495,7 +495,7 @@ npm test
 npm run test:e2e
 
 # Database
-psql -U postgres -d learnflow_dev
+psql -U postgres -d learnpybyai_dev
 alembic revision --autogenerate -m "message"
 alembic upgrade head
 alembic downgrade -1

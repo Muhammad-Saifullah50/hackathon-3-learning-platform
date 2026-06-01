@@ -1,7 +1,7 @@
 # Quickstart Guide: Python Code Sandbox
 
 ## Overview
-This guide covers the setup and usage of the Python code execution sandbox for LearnFlow. The sandbox allows students to safely execute Python code in an isolated environment with strict security and resource limits.
+This guide covers the setup and usage of the Python code execution sandbox for LearnPyByAI. The sandbox allows students to safely execute Python code in an isolated environment with strict security and resource limits.
 
 ## Architecture Components
 

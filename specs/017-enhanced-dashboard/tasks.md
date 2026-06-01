@@ -29,7 +29,7 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [X] T002 [P] Create Pydantic schemas `MasteryHistoryResponse`, `MasterySnapshot`, `RecommendationItem`, `TopicProgressItem` in `backend/src/schemas/dashboard.py`
-- [X] T003 [P] Extend `LearnFlowContext` with optional fields `agent_mode: Literal["recommendations", "module_detail"] | None = None` and `module_slug: str | None = None` in `backend/src/services/agents/context.py`
+- [X] T003 [P] Extend `LearnPyByAIContext` with optional fields `agent_mode: Literal["recommendations", "module_detail"] | None = None` and `module_slug: str | None = None` in `backend/src/services/agents/context.py`
 - [X] T004 [P] Add frontend TypeScript types `MasterySnapshot`, `TopicStatus`, `TopicProgressItem`, `Recommendation` to `frontend/src/types/index.ts`
 - [X] T005 Create `backend/src/api/v1/dashboard.py` router skeleton (empty router with prefix `/api/v1`), mount it in `backend/src/main.py`, and register `get_mastery_snapshot_repository` dependency factory in `backend/src/dependencies.py`
 
@@ -62,8 +62,8 @@
 **Independent Test**: Load the dashboard. The "Recommended Next" card appears immediately with loading state. Within ~15s it updates with AI content, without any page reload. If the agent fails/times out, a graceful fallback message with retry option is shown.
 
 - [X] T013 [P] [US2] Add `get_recommendations_prompt(mastery_context: str) -> str` function to `backend/src/llm/prompts.py` — returns a system prompt directing the Progress Agent to produce 1–3 JSON `RecommendationItem` objects based on mastery scores
-- [X] T014 [P] [US2] Extend `get_progress_agent()` in `backend/src/services/agents/agents.py` to branch `dynamic_instructions` on `agent_mode == "recommendations"`, returning the recommendations system prompt with mastery context from `LearnFlowContext`
-- [X] T015 [US2] Implement `GET /api/v1/dashboard/recommendations/stream` SSE endpoint in `backend/src/api/v1/dashboard.py` — builds `LearnFlowContext(agent_mode="recommendations")` with the authenticated student's mastery scores, runs Progress Agent, streams `event: recommendation` events then `event: done`; emits `event: error` and closes on any exception; 30s server timeout
+- [X] T014 [P] [US2] Extend `get_progress_agent()` in `backend/src/services/agents/agents.py` to branch `dynamic_instructions` on `agent_mode == "recommendations"`, returning the recommendations system prompt with mastery context from `LearnPyByAIContext`
+- [X] T015 [US2] Implement `GET /api/v1/dashboard/recommendations/stream` SSE endpoint in `backend/src/api/v1/dashboard.py` — builds `LearnPyByAIContext(agent_mode="recommendations")` with the authenticated student's mastery scores, runs Progress Agent, streams `event: recommendation` events then `event: done`; emits `event: error` and closes on any exception; 30s server timeout
 - [X] T016 [P] [US2] Add `recommendationsStreamUrl()` helper that returns the SSE endpoint URL to `frontend/src/lib/api/dashboard.ts`
 - [X] T017 [US2] Create `use-recommendations-stream.ts` SSE hook — opens `EventSource` on mount, parses `recommendation` events into `Recommendation[]`, transitions state through `loading → loaded | error`; 30s client-side timeout fallback; closes connection on `done` event in `frontend/src/hooks/use-recommendations-stream.ts`
 - [X] T018 [US2] Update `recommendations-panel.tsx` to accept `{ streamUrl: string }` prop instead of static `recommendations: string[]`; use `useRecommendationsStream` hook; show "Personalising your recommendations…" loading state; show fallback message with retry button on error/timeout in `frontend/src/components/dashboard/recommendations-panel.tsx`
@@ -94,8 +94,8 @@
 **Independent Test**: Visit a module progress page. Loading skeleton appears instantly. Within ~15s it is replaced by the agent-generated topic breakdown sorted covered → remaining/partial alphabetically. If agent fails/times out, fallback message with retry button appears.
 
 - [X] T023 [P] [US4] Add `get_module_detail_prompt(module_slug: str, mastery_context: str) -> str` to `backend/src/llm/prompts.py` — returns a system prompt instructing the Progress Agent to produce `TopicProgressItem` JSON objects for each topic in the given module, using the hardcoded per-module topic lists
-- [X] T024 [P] [US4] Extend `get_progress_agent()` in `backend/src/services/agents/agents.py` to branch on `agent_mode == "module_detail"`, returning the module detail system prompt with `module_slug` and mastery context from `LearnFlowContext`
-- [X] T025 [US4] Implement `GET /api/v1/module/{moduleId}/progress/stream` SSE endpoint in `backend/src/api/v1/dashboard.py` — validate `moduleId` against `MODULE_SLUG_MAP` (return 404 `{"detail": "Unknown module: '…'"}` on miss); build `LearnFlowContext(agent_mode="module_detail", module_slug=moduleId)` scoped to authenticated student's mastery scores; run Progress Agent; stream `event: topic` events then `event: done`; emits `event: error` on failure; 30s server timeout
+- [X] T024 [P] [US4] Extend `get_progress_agent()` in `backend/src/services/agents/agents.py` to branch on `agent_mode == "module_detail"`, returning the module detail system prompt with `module_slug` and mastery context from `LearnPyByAIContext`
+- [X] T025 [US4] Implement `GET /api/v1/module/{moduleId}/progress/stream` SSE endpoint in `backend/src/api/v1/dashboard.py` — validate `moduleId` against `MODULE_SLUG_MAP` (return 404 `{"detail": "Unknown module: '…'"}` on miss); build `LearnPyByAIContext(agent_mode="module_detail", module_slug=moduleId)` scoped to authenticated student's mastery scores; run Progress Agent; stream `event: topic` events then `event: done`; emits `event: error` on failure; 30s server timeout
 - [X] T026 [P] [US4] Add `moduleProgressStreamUrl(moduleId: string)` helper to `frontend/src/lib/api/dashboard.ts`
 - [X] T027 [US4] Create `use-module-progress-stream.ts` SSE hook — opens `EventSource` for the given `moduleId`; parses `topic` events into `TopicProgressItem[]`; on `done`, sorts topics: covered first then remaining/partial, alphabetically within each group; 30s client-side timeout; retry callback resets state and reopens connection in `frontend/src/hooks/use-module-progress-stream.ts`
 - [X] T028 [US4] Create `topic-list.tsx` — uses `useModuleProgressStream`; shows `<TopicSkeleton />` while loading; renders sorted topic list with covered checkmark indicators and remaining/partial markers; fallback message + retry button on error/timeout in `frontend/src/components/module-progress/topic-list.tsx`
@@ -166,7 +166,7 @@
 
 ```
 Task: T002 — Create backend/src/schemas/dashboard.py
-Task: T003 — Extend LearnFlowContext in context.py
+Task: T003 — Extend LearnPyByAIContext in context.py
 Task: T004 — Add frontend types to types/index.ts
 ```
 

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-AI agent instructions for LearnFlow — an AI-powered Python tutoring platform with multi-agent architecture.
+AI agent instructions for LearnPyByAI — an AI-powered Python tutoring platform with multi-agent architecture.
 
 ## Project Status (2026-05-09)
 
@@ -325,4 +325,4 @@ Invoke the user for input when encountering:
 
 ---
 
-**Generated**: 2026-03-14 | **Project**: LearnFlow (LearnPyByAi) | **Standard**: AAIF (Agentic AI Foundation)
+**Generated**: 2026-03-14 | **Project**: LearnPyByAI (LearnPyByAi) | **Standard**: AAIF (Agentic AI Foundation)

@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Configuration
 metadata:
-  name: learnflow-config
+  name: learnpybyai-config
   namespace: default
 spec:
   # Tracing configuration

@@ -104,7 +104,7 @@ Executed complete implementation of Feature 003 (API Gateway & Service Mesh Setu
 **Phase 3: Service Manifests (Tasks 17-27)**
 - Created 11 service manifests with Dapr sidecar annotations
 - Configured app-id, app-port, app-protocol for each service
-- Applied learnflow-config and learnflow-resiliency policies
+- Applied learnpybyai-config and learnpybyai-resiliency policies
 - Set resource limits: 200m-500m CPU, 256Mi-512Mi RAM
 - Configured health checks: liveness (5s delay, 3s period), readiness (3s delay, 3s period)
 

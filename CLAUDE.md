@@ -6,12 +6,12 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 
 ## Project Context: LearnPyByAi
 
-**Product Name:** LearnFlow (LearnPyByAi)
+**Product Name:** LearnPyByAI (LearnPyByAi)
 **Domain:** AI-powered Python tutoring platform
 **Target Users:** Students (learning Python) and Teachers (monitoring & generating exercises)
 
 ### Core Value Proposition
-LearnFlow enables students to learn Python through conversational AI agents that provide personalized tutoring, code execution, quizzes, and progress tracking. Teachers can monitor class performance, receive struggle alerts, and generate custom coding exercises.
+LearnPyByAI enables students to learn Python through conversational AI agents that provide personalized tutoring, code execution, quizzes, and progress tracking. Teachers can monitor class performance, receive struggle alerts, and generate custom coding exercises.
 
 ### User Roles & Capabilities
 

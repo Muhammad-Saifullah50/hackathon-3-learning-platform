@@ -41,14 +41,14 @@ async def recommendations_generator(
     try:
         from agents import Runner
         from src.services.agents.agents import get_progress_agent
-        from src.services.agents.context import LearnFlowContext
+        from src.services.agents.context import LearnPyByAIContext
         from src.services.agents.model_provider import get_run_config
         from src.schemas.dashboard import RecommendationItem
 
         mastery_records = await mastery_repo.get_user_mastery_records(current_user.id)
         mastery_context = build_mastery_context(mastery_records)
 
-        ctx = LearnFlowContext(
+        ctx = LearnPyByAIContext(
             user_id=current_user.id,
             db=db,
             agent_mode="recommendations",
@@ -124,12 +124,12 @@ async def module_progress_generator(
 
         from agents import Runner
         from src.services.agents.agents import get_progress_agent
-        from src.services.agents.context import LearnFlowContext
+        from src.services.agents.context import LearnPyByAIContext
         from src.services.agents.model_provider import get_run_config
 
         mastery_context = build_mastery_context(mastery_records)
 
-        ctx = LearnFlowContext(
+        ctx = LearnPyByAIContext(
             user_id=current_user.id,
             db=db,
             agent_mode="module_detail",

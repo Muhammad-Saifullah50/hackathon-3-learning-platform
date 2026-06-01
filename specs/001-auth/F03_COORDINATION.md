@@ -9,7 +9,7 @@
 
 ## Purpose
 
-This document provides all necessary information for F03 team to integrate the LearnFlow authentication service with Kong API Gateway for JWT validation across all backend services.
+This document provides all necessary information for F03 team to integrate the LearnPyByAI authentication service with Kong API Gateway for JWT validation across all backend services.
 
 ---
 
@@ -151,7 +151,7 @@ curl http://localhost:8000/api/auth/public-key
 
 ```bash
 curl -X POST http://kong:8001/consumers \
-  --data "username=learnflow-auth"
+  --data "username=learnpybyai-auth"
 ```
 
 #### Step 2: Add JWT Credential
@@ -161,10 +161,10 @@ curl -X POST http://kong:8001/consumers \
 PUBLIC_KEY=$(curl -s http://auth-service:8000/api/auth/public-key | jq -r '.public_key')
 
 # Add JWT credential to consumer
-curl -X POST http://kong:8001/consumers/learnflow-auth/jwt \
+curl -X POST http://kong:8001/consumers/learnpybyai-auth/jwt \
   --data "algorithm=RS256" \
   --data "rsa_public_key=$PUBLIC_KEY" \
-  --data "key=learnflow-jwt-issuer"
+  --data "key=learnpybyai-jwt-issuer"
 ```
 
 #### Step 3: Enable JWT Plugin
@@ -263,7 +263,7 @@ After successful JWT validation, Kong forwards these headers to upstream service
 |--------|-------|-------------|
 | `Authorization` | `Bearer <token>` | Original JWT token |
 | `X-Consumer-ID` | Kong consumer ID | Kong consumer identifier |
-| `X-Consumer-Username` | `learnflow-auth` | Kong consumer username |
+| `X-Consumer-Username` | `learnpybyai-auth` | Kong consumer username |
 | `X-Credential-Identifier` | JWT key ID | JWT credential identifier |
 
 ### Extracting User Information
@@ -397,10 +397,10 @@ When F01 team rotates JWT signing keys:
 
 ```bash
 # Get JWT credential ID
-JWT_ID=$(curl -s http://kong:8001/consumers/learnflow-auth/jwt | jq -r '.data[0].id')
+JWT_ID=$(curl -s http://kong:8001/consumers/learnpybyai-auth/jwt | jq -r '.data[0].id')
 
 # Update public key
-curl -X PATCH http://kong:8001/consumers/learnflow-auth/jwt/$JWT_ID \
+curl -X PATCH http://kong:8001/consumers/learnpybyai-auth/jwt/$JWT_ID \
   --data "rsa_public_key=$NEW_PUBLIC_KEY"
 ```
 
@@ -467,7 +467,7 @@ curl -X PATCH http://kong:8001/consumers/learnflow-auth/jwt/$JWT_ID \
 ### F01 Team (Authentication Service)
 
 **Primary Contact**: [Your Name/Team]
-**Email**: auth-team@learnflow.dev
+**Email**: auth-team@learnpybyai.dev
 **Slack**: #f01-auth-team
 
 **On-Call**: [On-call rotation/PagerDuty]

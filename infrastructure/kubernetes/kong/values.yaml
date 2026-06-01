@@ -1,4 +1,4 @@
-# Kong Helm Chart Values for LearnFlow
+# Kong Helm Chart Values for LearnPyByAI
 # API Gateway with JWT authentication, rate limiting, and CORS
 
 replicaCount: 2

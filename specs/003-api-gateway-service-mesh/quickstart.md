@@ -6,7 +6,7 @@
 
 ## Overview
 
-This guide walks you through deploying Kong API Gateway and Dapr service mesh on Kubernetes (Minikube) for the LearnFlow platform.
+This guide walks you through deploying Kong API Gateway and Dapr service mesh on Kubernetes (Minikube) for the LearnPyByAI platform.
 
 **Estimated Time**: 30-45 minutes
 
@@ -439,7 +439,7 @@ spec:
         dapr.io/app-id: "test-service"
         dapr.io/app-port: "8000"
         dapr.io/app-protocol: "http"
-        dapr.io/config: "learnflow-config"
+        dapr.io/config: "learnpybyai-config"
         dapr.io/log-level: "info"
     spec:
       containers:
@@ -534,7 +534,7 @@ curl http://localhost:3500/v1.0/invoke/test-service/method/
 
 ```bash
 # Publish a test message
-curl -X POST http://localhost:3500/v1.0/publish/learnflow-pubsub/struggle-alerts \
+curl -X POST http://localhost:3500/v1.0/publish/learnpybyai-pubsub/struggle-alerts \
   -H "Content-Type: application/json" \
   -d '{
     "student_id": "test-123",
@@ -545,7 +545,7 @@ curl -X POST http://localhost:3500/v1.0/publish/learnflow-pubsub/struggle-alerts
 # Expected: 204 No Content (message published)
 
 # Check Redis for the message
-kubectl exec -it redis-master-0 -- redis-cli -a changeme XLEN "learnflow-pubsub-struggle-alerts"
+kubectl exec -it redis-master-0 -- redis-cli -a changeme XLEN "learnpybyai-pubsub-struggle-alerts"
 ```
 
 ### 9.5 Test Health Checks
@@ -656,7 +656,7 @@ minikube delete
 
 ## Next Steps
 
-1. **Deploy Backend Services**: Deploy the 11 LearnFlow microservices with Dapr sidecars
+1. **Deploy Backend Services**: Deploy the 11 LearnPyByAI microservices with Dapr sidecars
 2. **Configure Authentication**: Integrate with auth-service JWT tokens
 3. **Test End-to-End Flows**: Verify API requests through Kong → Dapr → Services
 4. **Set Up Monitoring**: Deploy Prometheus and Grafana for observability

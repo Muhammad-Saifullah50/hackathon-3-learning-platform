@@ -1,4 +1,4 @@
-"""LearnFlow agent definitions using the OpenAI Agents SDK.
+"""LearnPyByAI agent definitions using the OpenAI Agents SDK.
 
 Builds 6 agents (Triage, Concepts, Debug, CodeReview, Exercise, Progress)
 using SDK primitives: Agent, function_tool, handoff, ModelSettings.
@@ -32,7 +32,7 @@ from src.schemas.agent_responses import (
     ProgressAgentResponse,
     QuizResponse,
 )
-from src.services.agents.context import LearnFlowContext
+from src.services.agents.context import LearnPyByAIContext
 from src.services.agents.triage import classify_intent
 
 
@@ -57,7 +57,7 @@ def _build_level_instructions(level: Optional[str]) -> str:
 
 
 @function_tool
-def get_exercise(ctx: RunContextWrapper[LearnFlowContext], topic: str, difficulty: str) -> str:
+def get_exercise(ctx: RunContextWrapper[LearnPyByAIContext], topic: str, difficulty: str) -> str:
     """Generate a coding exercise on a given topic and difficulty level."""
     return (
         f"Generate a {difficulty}-level Python exercise on '{topic}'. "
@@ -67,7 +67,7 @@ def get_exercise(ctx: RunContextWrapper[LearnFlowContext], topic: str, difficult
 
 
 @function_tool
-def get_progress_summary(ctx: RunContextWrapper[LearnFlowContext]) -> str:
+def get_progress_summary(ctx: RunContextWrapper[LearnPyByAIContext]) -> str:
     """Fetch the student's current mastery scores and streak data."""
     lf_ctx = ctx.context
     return (
@@ -79,7 +79,7 @@ def get_progress_summary(ctx: RunContextWrapper[LearnFlowContext]) -> str:
 
 
 @function_tool
-def run_static_analysis(ctx: RunContextWrapper[LearnFlowContext], code: str) -> str:
+def run_static_analysis(ctx: RunContextWrapper[LearnPyByAIContext], code: str) -> str:
     """Run PEP 8 static analysis on the provided Python code."""
     import subprocess
     import tempfile
@@ -109,7 +109,7 @@ def run_static_analysis(ctx: RunContextWrapper[LearnFlowContext], code: str) -> 
     return "No PEP 8 violations found."
 
 
-def get_triage_agent() -> Agent[LearnFlowContext]:
+def get_triage_agent() -> Agent[LearnPyByAIContext]:
     """Triage agent that routes student queries to specialist agents via handoffs."""
     concepts = get_concepts_agent()
     debug = get_debug_agent()
@@ -141,11 +141,11 @@ def get_triage_agent() -> Agent[LearnFlowContext]:
     )
 
 
-def get_concepts_agent() -> Agent[LearnFlowContext]:
+def get_concepts_agent() -> Agent[LearnPyByAIContext]:
     """Concepts agent that explains Python concepts at the right level."""
 
     def dynamic_instructions(
-        context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
+        context: RunContextWrapper[LearnPyByAIContext], agent: Agent[LearnPyByAIContext]
     ) -> str:
         lf_ctx = context.context
         base = get_concept_agent_prompt()
@@ -162,11 +162,11 @@ def get_concepts_agent() -> Agent[LearnFlowContext]:
     )
 
 
-def get_debug_agent() -> Agent[LearnFlowContext]:
+def get_debug_agent() -> Agent[LearnPyByAIContext]:
     """Debug agent that provides progressive hints for broken code."""
 
     def dynamic_instructions(
-        context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
+        context: RunContextWrapper[LearnPyByAIContext], agent: Agent[LearnPyByAIContext]
     ) -> str:
         base = get_debug_agent_prompt()
         code_context = ""
@@ -183,11 +183,11 @@ def get_debug_agent() -> Agent[LearnFlowContext]:
     )
 
 
-def get_code_review_agent() -> Agent[LearnFlowContext]:
+def get_code_review_agent() -> Agent[LearnPyByAIContext]:
     """Code review agent that analyzes code for correctness, style, and efficiency."""
 
     def dynamic_instructions(
-        context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
+        context: RunContextWrapper[LearnPyByAIContext], agent: Agent[LearnPyByAIContext]
     ) -> str:
         base = get_code_review_agent_prompt()
         code_context = ""
@@ -210,11 +210,11 @@ def get_code_review_agent() -> Agent[LearnFlowContext]:
     )
 
 
-def get_exercise_agent() -> Agent[LearnFlowContext]:
+def get_exercise_agent() -> Agent[LearnPyByAIContext]:
     """Exercise agent that generates coding challenges and grades submissions."""
 
     def dynamic_instructions(
-        context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
+        context: RunContextWrapper[LearnPyByAIContext], agent: Agent[LearnPyByAIContext]
     ) -> str:
         base = get_exercise_agent_prompt()
         topic_context = ""
@@ -240,11 +240,11 @@ def get_exercise_agent() -> Agent[LearnFlowContext]:
     )
 
 
-def get_quiz_agent() -> Agent[LearnFlowContext]:
+def get_quiz_agent() -> Agent[LearnPyByAIContext]:
     """Quiz agent that generates a 6-card quiz (3 MCQ + 3 flashcard) on a Python topic."""
 
     def dynamic_instructions(
-        context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
+        context: RunContextWrapper[LearnPyByAIContext], agent: Agent[LearnPyByAIContext]
     ) -> str:
         topic_hint = f" The topic is explicitly: {context.context.topic}." if context.context.topic else (
             " Read the full conversation provided in the input and identify what Python topic "
@@ -278,11 +278,11 @@ def get_quiz_agent() -> Agent[LearnFlowContext]:
     )
 
 
-def get_progress_agent() -> Agent[LearnFlowContext]:
+def get_progress_agent() -> Agent[LearnPyByAIContext]:
     """Progress agent that summarizes learning progress, mastery, and recommendations."""
 
     def dynamic_instructions(
-        context: RunContextWrapper[LearnFlowContext], agent: Agent[LearnFlowContext]
+        context: RunContextWrapper[LearnPyByAIContext], agent: Agent[LearnPyByAIContext]
     ) -> str:
         lf_ctx = context.context
         mastery_ctx = lf_ctx.mastery_context or ""

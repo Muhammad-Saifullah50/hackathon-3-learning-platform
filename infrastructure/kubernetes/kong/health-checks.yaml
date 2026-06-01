@@ -1,4 +1,4 @@
-# Kong Health Check Configuration for LearnFlow
+# Kong Health Check Configuration for LearnPyByAI
 # Active and passive health checks for all service upstreams
 
 apiVersion: configuration.konghq.com/v1

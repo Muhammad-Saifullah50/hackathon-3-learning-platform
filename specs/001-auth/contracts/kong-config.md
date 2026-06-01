@@ -2,13 +2,13 @@
 
 **Feature**: 001-auth
 **Date**: 2026-03-14
-**Purpose**: Configure Kong API Gateway to validate JWT tokens issued by LearnFlow authentication service
+**Purpose**: Configure Kong API Gateway to validate JWT tokens issued by LearnPyByAI authentication service
 
 ---
 
 ## Overview
 
-This document describes how to configure Kong API Gateway to validate JWT tokens issued by the LearnFlow authentication service. Kong will use the RSA public key from the auth service to verify token signatures without needing to call the auth service for every request.
+This document describes how to configure Kong API Gateway to validate JWT tokens issued by the LearnPyByAI authentication service. Kong will use the RSA public key from the auth service to verify token signatures without needing to call the auth service for every request.
 
 ## Architecture
 
@@ -73,7 +73,7 @@ If you want to track which service is making requests:
 
 ```bash
 curl -X POST http://localhost:8001/consumers \
-  --data "username=learnflow-auth"
+  --data "username=learnpybyai-auth"
 ```
 
 #### Step 2: Configure JWT Plugin on Route/Service
@@ -98,10 +98,10 @@ PUBLIC_KEY=$(curl -s http://localhost:8000/api/auth/public-key | jq -r '.public_
 Then, add it to Kong:
 
 ```bash
-curl -X POST http://localhost:8001/consumers/learnflow-auth/jwt \
+curl -X POST http://localhost:8001/consumers/learnpybyai-auth/jwt \
   --data "algorithm=RS256" \
   --data "rsa_public_key=$PUBLIC_KEY" \
-  --data "key=learnflow-auth-service"
+  --data "key=learnpybyai-auth-service"
 ```
 
 ### Option 2: Using Kong Declarative Configuration (kong.yml)
@@ -110,7 +110,7 @@ curl -X POST http://localhost:8001/consumers/learnflow-auth/jwt \
 _format_version: "3.0"
 
 services:
-  - name: learnflow-backend
+  - name: learnpybyai-backend
     url: http://backend:8000
     routes:
       - name: protected-routes
@@ -131,10 +131,10 @@ services:
               cookie_names: []
 
 consumers:
-  - username: learnflow-auth
+  - username: learnpybyai-auth
     jwt_secrets:
       - algorithm: RS256
-        key: learnflow-auth-service
+        key: learnpybyai-auth-service
         rsa_public_key: |
           -----BEGIN PUBLIC KEY-----
           MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
@@ -149,7 +149,7 @@ consumers:
 
 ### Access Token Claims
 
-LearnFlow issues JWT access tokens with the following claims:
+LearnPyByAI issues JWT access tokens with the following claims:
 
 ```json
 {
@@ -159,7 +159,7 @@ LearnFlow issues JWT access tokens with the following claims:
   "session_id": "660e8400-e29b-41d4-a716-446655440001",
   "exp": 1710417159,
   "iat": 1710416259,
-  "iss": "learnflow-auth"
+  "iss": "learnpybyai-auth"
 }
 ```
 
@@ -167,7 +167,7 @@ LearnFlow issues JWT access tokens with the following claims:
 - `sub` (subject): User ID (UUID)
 - `exp` (expiration): Token expiration timestamp (15 minutes from issue)
 - `iat` (issued at): Token issue timestamp
-- `iss` (issuer): Always "learnflow-auth"
+- `iss` (issuer): Always "learnpybyai-auth"
 
 **Custom Claims**:
 - `email` (string): User email address
@@ -196,7 +196,7 @@ Kong will NOT validate:
 
 ```http
 GET /api/learning/modules HTTP/1.1
-Host: api.learnflow.com
+Host: api.learnpybyai.com
 Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
@@ -217,8 +217,8 @@ Kong adds the following headers to the backend request:
 GET /api/learning/modules HTTP/1.1
 Host: backend:8000
 Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-X-Consumer-Username: learnflow-auth
-X-Credential-Identifier: learnflow-auth-service
+X-Consumer-Username: learnpybyai-auth
+X-Credential-Identifier: learnpybyai-auth-service
 X-Anonymous-Consumer: false
 ```
 
@@ -450,7 +450,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 curl http://localhost:8000/api/auth/public-key
 
 # Update Kong JWT credential
-curl -X PATCH http://localhost:8001/consumers/learnflow-auth/jwt/{jwt_id} \
+curl -X PATCH http://localhost:8001/consumers/learnpybyai-auth/jwt/{jwt_id} \
   --data "rsa_public_key=$NEW_PUBLIC_KEY"
 ```
 
@@ -484,7 +484,7 @@ if session.revoked_at is not None:
 - [Kong JWT Plugin Documentation](https://docs.konghq.com/hub/kong-inc/jwt/)
 - [JWT.io - JWT Debugger](https://jwt.io/)
 - [RFC 7519 - JSON Web Token (JWT)](https://tools.ietf.org/html/rfc7519)
-- [LearnFlow Auth Service API Documentation](../spec.md)
+- [LearnPyByAI Auth Service API Documentation](../spec.md)
 
 ---
 

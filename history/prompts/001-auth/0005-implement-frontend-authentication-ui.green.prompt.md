@@ -48,7 +48,7 @@ tests:
 
 # Prompt
 
-Implement the authentication frontend for the LearnFlow platform following the spec-driven development artifacts.
+Implement the authentication frontend for the LearnPyByAI platform following the spec-driven development artifacts.
 
 **Context:**
 - Feature: 001-auth (Authentication & Authorization)
@@ -125,7 +125,7 @@ Start with Phase 1 setup tasks and proceed systematically through the phases.
 
 ## Implementation Summary
 
-Successfully implemented the complete frontend authentication system for LearnFlow following the spec-driven development approach. All MVP user stories (US1, US2, US7) have been completed with polished UI components.
+Successfully implemented the complete frontend authentication system for LearnPyByAI following the spec-driven development approach. All MVP user stories (US1, US2, US7) have been completed with polished UI components.
 
 ## Tasks Completed
 

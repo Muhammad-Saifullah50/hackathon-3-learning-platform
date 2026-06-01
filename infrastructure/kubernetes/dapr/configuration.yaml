@@ -1,10 +1,10 @@
-# Dapr Configuration for LearnFlow Platform
+# Dapr Configuration for LearnPyByAI Platform
 # Date: 2026-03-15
 
 apiVersion: dapr.io/v1alpha1
 kind: Configuration
 metadata:
-  name: learnflow-config
+  name: learnpybyai-config
   namespace: default
 spec:
   # ==========================================================================

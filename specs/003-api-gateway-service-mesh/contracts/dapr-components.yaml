@@ -1,4 +1,4 @@
-# Dapr Components Configuration for LearnFlow Platform
+# Dapr Components Configuration for LearnPyByAI Platform
 # Date: 2026-03-15
 
 # ============================================================================
@@ -8,7 +8,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: learnflow-pubsub
+  name: learnpybyai-pubsub
   namespace: default
 spec:
   type: pubsub.redis
@@ -48,7 +48,7 @@ spec:
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: learnflow-statestore
+  name: learnpybyai-statestore
   namespace: default
 spec:
   type: state.redis

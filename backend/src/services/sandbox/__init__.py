@@ -1,1 +1,1 @@
-"""Sandbox services package for LearnFlow."""
+"""Sandbox services package for LearnPyByAI."""

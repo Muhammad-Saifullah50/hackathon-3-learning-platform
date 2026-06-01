@@ -1,4 +1,4 @@
-"""SDK context object for LearnFlow agent runs.
+"""SDK context object for LearnPyByAI agent runs.
 
 Carries user identity, session tracking, database access, and request
 parameters into every SDK agent, tool, and handoff call.
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @dataclass
-class LearnFlowContext:
+class LearnPyByAIContext:
     """Context passed to all SDK agents via Runner.run().
 
     Attributes:

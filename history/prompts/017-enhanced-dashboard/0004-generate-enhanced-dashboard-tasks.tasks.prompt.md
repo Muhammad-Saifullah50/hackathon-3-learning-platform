@@ -31,7 +31,7 @@ Generated `specs/017-enhanced-dashboard/tasks.md` with 34 tasks across 8 phases 
 
 **Phase structure**:
 - Phase 1 (Setup, 1 task): Alembic migration for `mastery_snapshots` table
-- Phase 2 (Foundational, 4 tasks): Pydantic schemas, LearnFlowContext extension, frontend TS types, router registration
+- Phase 2 (Foundational, 4 tasks): Pydantic schemas, LearnPyByAIContext extension, frontend TS types, router registration
 - Phase 3 (US1 Charts P1, 7 tasks): MasterySnapshotRepository, ProgressRepository extension, mastery-history endpoint, Recharts charts, dashboard integration
 - Phase 4 (US2 Recommendations P1, 7 tasks): Prompts, Progress Agent branching, recommendations SSE endpoint, SSE hook, RecommendationsPanel update, dashboard wiring
 - Phase 5 (US3 Navigation P1, 3 tasks): module-card.tsx button change, topic-skeleton.tsx, module progress page scaffold

@@ -1,6 +1,6 @@
 openapi: "3.1.0"
 info:
-  title: LearnFlow Chat API (F15)
+  title: LearnPyByAI Chat API (F15)
   version: "1.0.0"
   description: >
     Chat endpoints for the AI Tutor feature. All endpoints require a valid
@@ -9,7 +9,7 @@ info:
 servers:
   - url: http://localhost:8000/api/v1
     description: Local development
-  - url: https://api.learnflow.app/api/v1
+  - url: https://api.learnpybyai.app/api/v1
     description: Production
 
 security:

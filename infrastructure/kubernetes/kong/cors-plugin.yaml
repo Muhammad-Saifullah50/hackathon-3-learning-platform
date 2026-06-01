@@ -1,4 +1,4 @@
-# Kong CORS Plugin Configuration for LearnFlow
+# Kong CORS Plugin Configuration for LearnPyByAI
 # Enables cross-origin requests from frontend applications
 
 apiVersion: configuration.konghq.com/v1
@@ -11,7 +11,7 @@ config:
   # Allowed origins
   origins:
     - "http://localhost:3000"
-    - "https://learnflow.com"
+    - "https://learnpybyai.com"
 
   # Allowed HTTP methods
   methods:

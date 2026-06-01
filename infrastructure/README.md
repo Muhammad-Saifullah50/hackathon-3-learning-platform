@@ -1,8 +1,8 @@
-# LearnFlow Infrastructure
+# LearnPyByAI Infrastructure
 
 ## Overview
 
-This directory contains the Kubernetes infrastructure configuration for the LearnFlow platform, including Kong API Gateway, Dapr service mesh, and all microservice deployments.
+This directory contains the Kubernetes infrastructure configuration for the LearnPyByAI platform, including Kong API Gateway, Dapr service mesh, and all microservice deployments.
 
 ## Architecture
 
@@ -227,7 +227,7 @@ curl http://localhost:3500/v1.0/healthz
 curl http://localhost:3500/v1.0/invoke/concepts-agent/method/health
 
 # Pub/sub
-curl -X POST http://localhost:3500/v1.0/publish/learnflow-pubsub/struggle-alerts \
+curl -X POST http://localhost:3500/v1.0/publish/learnpybyai-pubsub/struggle-alerts \
   -H "Content-Type: application/json" \
   -d '{"student_id": "123", "error": "SyntaxError"}'
 ```

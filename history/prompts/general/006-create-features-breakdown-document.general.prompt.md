@@ -28,7 +28,7 @@ You know the buisnmess requirements and the tech stack. Break the app into  indi
 
 ## Response snapshot
 
-Created comprehensive FEATURES.md document breaking down LearnFlow platform into 24 isolated, buildable features organized in 6 phases:
+Created comprehensive FEATURES.md document breaking down LearnPyByAI platform into 24 isolated, buildable features organized in 6 phases:
 
 **Phase 1: Foundation (F01-F04)**
 - Authentication & Authorization (Better Auth + JWT)

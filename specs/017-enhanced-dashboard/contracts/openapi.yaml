@@ -1,6 +1,6 @@
 openapi: "3.1.0"
 info:
-  title: LearnFlow Dashboard API — F017
+  title: LearnPyByAI Dashboard API — F017
   version: "1.0.0"
   description: |
     New endpoints added by Feature 017 (Enhanced Student Dashboard).

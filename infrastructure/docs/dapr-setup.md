@@ -2,11 +2,11 @@
 
 ## Overview
 
-This document describes the Dapr service mesh setup for the LearnFlow platform, including deployment, configuration, and troubleshooting.
+This document describes the Dapr service mesh setup for the LearnPyByAI platform, including deployment, configuration, and troubleshooting.
 
 ## Architecture
 
-Dapr provides service mesh capabilities for LearnFlow microservices:
+Dapr provides service mesh capabilities for LearnPyByAI microservices:
 - Service-to-service invocation with automatic retries
 - Pub/sub messaging with Redis
 - State management
@@ -59,7 +59,7 @@ Dapr provides service mesh capabilities for LearnFlow microservices:
 Location: `infrastructure/kubernetes/dapr/components.yaml`
 
 #### Redis Pub/Sub Component
-- **Name**: `learnflow-pubsub`
+- **Name**: `learnpybyai-pubsub`
 - **Type**: `pubsub.redis`
 - **Host**: `redis-master.default.svc.cluster.local:6379`
 - **Features**:
@@ -70,7 +70,7 @@ Location: `infrastructure/kubernetes/dapr/components.yaml`
   - Concurrency: 10
 
 #### Redis State Store Component
-- **Name**: `learnflow-statestore`
+- **Name**: `learnpybyai-statestore`
 - **Type**: `state.redis`
 - **Host**: `redis-master.default.svc.cluster.local:6379`
 - **Features**:
@@ -179,7 +179,7 @@ annotations:
   dapr.io/app-id: "service-name"
   dapr.io/app-port: "8000"
   dapr.io/app-protocol: "http"
-  dapr.io/config: "learnflow-config"
+  dapr.io/config: "learnpybyai-config"
   dapr.io/log-level: "info"
   dapr.io/enable-metrics: "true"
   dapr.io/metrics-port: "9090"
@@ -224,7 +224,7 @@ Dapr automatically discovers services by `app-id`. No need for hardcoded IPs or 
 
 ```bash
 # HTTP publish
-curl -X POST http://localhost:3500/v1.0/publish/learnflow-pubsub/struggle-alerts \
+curl -X POST http://localhost:3500/v1.0/publish/learnpybyai-pubsub/struggle-alerts \
   -H "Content-Type: application/json" \
   -d '{"student_id": "123", "error_type": "SyntaxError"}'
 
@@ -233,7 +233,7 @@ from dapr.clients import DaprClient
 
 with DaprClient() as client:
     client.publish_event(
-        pubsub_name="learnflow-pubsub",
+        pubsub_name="learnpybyai-pubsub",
         topic_name="struggle-alerts",
         data={"student_id": "123", "error_type": "SyntaxError"}
     )
@@ -319,10 +319,10 @@ kubectl get subscriptions -n default
 kubectl exec <pod-name> -c daprd -- redis-cli -h redis-master.default.svc.cluster.local -a changeme ping
 
 # Check Redis streams
-kubectl exec -n default redis-master-0 -- redis-cli -a changeme KEYS "learnflow-pubsub-*"
+kubectl exec -n default redis-master-0 -- redis-cli -a changeme KEYS "learnpybyai-pubsub-*"
 
 # Check dead letter topics
-kubectl exec -n default redis-master-0 -- redis-cli -a changeme XLEN "learnflow-pubsub-struggle-alerts-deadletter"
+kubectl exec -n default redis-master-0 -- redis-cli -a changeme XLEN "learnpybyai-pubsub-struggle-alerts-deadletter"
 
 # Check Dapr logs for delivery errors
 kubectl logs <subscriber-pod> -c daprd --tail=50 | grep "struggle-alerts"
@@ -369,7 +369,7 @@ kubectl exec <pod-name> -c daprd -- redis-cli -h redis-master.default.svc.cluste
 kubectl get secret redis-secret -n default
 
 # Check Dapr component configuration
-kubectl get component learnflow-pubsub -o yaml
+kubectl get component learnpybyai-pubsub -o yaml
 ```
 
 ## Monitoring

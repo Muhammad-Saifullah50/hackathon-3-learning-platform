@@ -3,13 +3,13 @@ version: '3.8'
 services:
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: learnflow_mailhog
+    container_name: learnpybyai_mailhog
     ports:
       - "1025:1025"  # SMTP server
       - "8025:8025"  # Web UI
     networks:
-      - learnflow_network
+      - learnpybyai_network
 
 networks:
-  learnflow_network:
+  learnpybyai_network:
     driver: bridge

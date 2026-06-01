@@ -2,7 +2,7 @@
 
 **Test Date:** 2026-03-14
 **Tester:** Playwright Automation
-**Application:** LearnFlow - AI-Powered Python Learning Platform
+**Application:** LearnPyByAI - AI-Powered Python Learning Platform
 
 ## Test Environment
 
@@ -29,7 +29,7 @@
 **Status:** ✅ PASS
 
 - Successfully navigated to http://localhost:3000
-- Page title: "LearnFlow - AI-Powered Python Learning"
+- Page title: "LearnPyByAI - AI-Powered Python Learning"
 - All UI elements rendered:
   - Hero section with "Learn Python with AI-Powered Tutoring"
   - "Get Started" and "Sign In" buttons

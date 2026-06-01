@@ -4,7 +4,7 @@ metadata:
   name: struggle-alerts-subscription
   namespace: default
 spec:
-  pubsubname: learnflow-pubsub
+  pubsubname: learnpybyai-pubsub
   topic: struggle-alerts
   routes:
     default: /webhooks/struggle-alert

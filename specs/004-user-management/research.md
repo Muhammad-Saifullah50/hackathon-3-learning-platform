@@ -415,7 +415,7 @@ None - all technical unknowns resolved.
 
 - [F01 Authentication Spec](../001-auth/spec.md)
 - [F02 Database Schema Spec](../002-database-schema/spec.md)
-- [LearnFlow Constitution](.specify/memory/constitution.md)
+- [LearnPyByAI Constitution](.specify/memory/constitution.md)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [Next.js 14 Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions)
 - [SQLAlchemy Cascade](https://docs.sqlalchemy.org/en/20/orm/cascades.html)

@@ -36,7 +36,7 @@ Generated full architectural plan for Feature 017 (Enhanced Student Dashboard & 
 1. `user_module_mastery` is a single-row-per-user-per-module table — cannot serve as a time-series. A new `mastery_snapshots` append-only table is required for the "Mastery Over Time" chart.
 2. `recharts@^2.15.0` is already installed in the frontend.
 3. Two new dedicated SSE endpoints planned (`GET /api/v1/dashboard/recommendations/stream` and `GET /api/v1/module/{moduleId}/progress/stream`), separate from the chat SSE to avoid quota/session entanglement.
-4. Progress Agent extended with `agent_mode` branching via `LearnFlowContext`.
+4. Progress Agent extended with `agent_mode` branching via `LearnPyByAIContext`.
 5. `/progress` page is a trivial `ComingSoonPanel` — delete and return 404.
 6. Sidebar `NAV_ITEMS` contains `Progress` link — remove.
 
