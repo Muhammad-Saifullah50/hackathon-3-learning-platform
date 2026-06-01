@@ -77,21 +77,11 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = Field(default=0.7, description="Default temperature for completions")
     LLM_CACHE_TTL_DAYS: int = Field(default=30, description="Cache entry TTL in days")
 
-    # CORS
-    CORS_ORIGINS: List[str] = Field(
-        default=["http://localhost:3000"],
+    # CORS — kept as a plain string; split into a list in main.py
+    CORS_ORIGINS: str = Field(
+        default="http://localhost:3000",
         description="Comma-separated list of allowed CORS origins",
     )
-
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v: object) -> List[str]:
-        """Parse comma-separated string or list into a list of origins."""
-        if isinstance(v, list):
-            return [o.strip() for o in v if o.strip()]
-        if isinstance(v, str):
-            return [o.strip() for o in v.split(",") if o.strip()]
-        return list(v)
 
     def get_private_key(self) -> str:
         """Load RSA private key from env content or file."""
