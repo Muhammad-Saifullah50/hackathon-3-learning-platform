@@ -79,8 +79,8 @@ class VercelSandbox(SandboxInterface):
             )
 
             execution_time = int((time.time() - start_time) * 1000)
-            stdout = result.stdout()
-            stderr = result.stderr()
+            stdout = await result.stdout()
+            stderr = await result.stderr()
             exit_code = result.exit_code
 
             if exit_code == 124:

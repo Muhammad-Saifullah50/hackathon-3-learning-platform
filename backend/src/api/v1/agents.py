@@ -72,6 +72,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["agents"])
 
 
+def _final_output_to_str(final_output) -> str:
+    """Convert a Runner final_output to a JSON-serializable string for history storage."""
+    if final_output is None:
+        return ""
+    if hasattr(final_output, "model_dump_json"):
+        return final_output.model_dump_json()
+    return str(final_output)
+
+
 async def _sse_result_generator(result, session_id: str | None = None):
     """Emit a completed Runner.run result as SSE (used by non-chat endpoints)."""
     if session_id:
@@ -657,7 +666,7 @@ async def concepts_explain(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     await session_repo.add_message_to_history(
-        str(session_id), "assistant", result.final_output or ""
+        str(session_id), "assistant", _final_output_to_str(result.final_output)
     )
     return StreamingResponse(
         _sse_result_generator(result),
@@ -719,7 +728,7 @@ async def code_review_analyze(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     await session_repo.add_message_to_history(
-        str(session_id), "assistant", result.final_output or ""
+        str(session_id), "assistant", _final_output_to_str(result.final_output)
     )
     return StreamingResponse(
         _sse_result_generator(result),
@@ -784,7 +793,7 @@ async def debug_analyze(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     await session_repo.add_message_to_history(
-        str(session_id), "assistant", result.final_output or ""
+        str(session_id), "assistant", _final_output_to_str(result.final_output)
     )
     return StreamingResponse(
         _sse_result_generator(result),
